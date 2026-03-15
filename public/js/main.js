@@ -165,7 +165,6 @@ function validateBid(amount) {
 function updateAuctionUI() {
     if (window.location.pathname.includes('auction.html')) {
         const pName = document.getElementById('playerNameDisplay');
-        const pImg = document.getElementById('playerImageDisplay');
         const pPos = document.getElementById('positionBadge');
         const bAmt = document.getElementById('bidAmountDisplay');
         const bName = document.getElementById('bidderNameDisplay');
@@ -176,7 +175,6 @@ function updateAuctionUI() {
         if (!gameState.currentPlayer) return;
 
         pName.textContent = gameState.currentPlayer.name;
-        if (pImg) pImg.src = gameState.currentPlayer.img || 'https://via.placeholder.com/150';
 
         const userNameEl = document.getElementById('currentUserNameDisplay');
         if (userNameEl && currentUser) userNameEl.textContent = currentUser.name;
