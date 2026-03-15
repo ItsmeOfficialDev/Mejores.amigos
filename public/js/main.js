@@ -33,8 +33,10 @@ function navigate(page) {
 window.addCustomVal = function(val) {
     const input = document.getElementById('customBidInput');
     if (input) {
-        const current = parseInt(input.value) || 0;
+        const current = parseInt(input.value) || (gameState ? gameState.currentBid : 0);
         input.value = current + val;
+        // Trigger input event to update preview
+        input.dispatchEvent(new Event('input', { bubbles: true }));
     }
 };
 
@@ -94,16 +96,6 @@ socket.on('gameState', (state) => {
 
 socket.on('notification', (data) => {
     showToast(data.message, data.type);
-
-    // Update Activity Feed
-    const feed = document.getElementById('activityFeed');
-    if (feed) {
-        const item = document.createElement('div');
-        item.className = 'activity-item';
-        item.textContent = data.message;
-        feed.prepend(item);
-        if (feed.children.length > 20) feed.lastChild.remove();
-    }
 
     // Big Bid Notification
     if (data.type === 'bid') {
@@ -191,7 +183,10 @@ function updateAuctionUI() {
         bName.textContent = gameState.currentBidder ? (gameState.currentBidder === (currentUser ? currentUser.name : '') ? 'YOU' : gameState.currentBidder) : '---';
 
         const nextBid = gameState.currentBid + 5;
-        mainBidBtn.textContent = `BID +₹5 LAKH (${formatMoney(nextBid)})`;
+        if (!mainBidBtn.dataset.customActive) {
+            mainBidBtn.textContent = `BID +₹5 LAKH (${formatMoney(nextBid)})`;
+            mainBidBtn.dataset.nextAmt = nextBid;
+        }
 
         pauseBanner.style.display = gameState.gameStatus === 'paused' ? 'block' : 'none';
         if (pauseBtn) pauseBtn.textContent = gameState.gameStatus === 'paused' ? '▶️ RESUME AUCTION' : '⏸️ PAUSE AUCTION';
@@ -250,10 +245,12 @@ document.addEventListener('click', (e) => {
     if (e.target.id === 'resetBtn') socket.emit('resetLobby');
     if (e.target.id === 'exitBtn') window.location.href = '/';
     if (e.target.id === 'mainBidBtn') {
-        const amt = gameState.currentBid + 5;
+        const amt = parseInt(e.target.dataset.nextAmt);
         const validation = validateBid(amt);
         if (validation.valid) {
             socket.emit('placeBid', amt);
+            // Reset to default increment after custom bid
+            delete e.target.dataset.customActive;
         } else {
             showToast(validation.reason, 'error');
         }
@@ -289,17 +286,19 @@ document.addEventListener('click', (e) => {
         }
     }
     if (e.target.id === 'customBidBtn') {
-        const area = document.getElementById('customBidInputArea');
-        area.style.display = area.style.display === 'none' ? 'flex' : 'none';
+        document.getElementById('customBidSelector').style.display = 'block';
     }
-    if (e.target.id === 'placeCustomBidBtn') {
+    if (e.target.id === 'confirmCustomBidBtn') {
         const amt = parseInt(document.getElementById('customBidInput').value);
         const validation = validateBid(amt);
         if (validation.valid) {
-            socket.emit('placeBid', amt);
-            document.getElementById('customBidInputArea').style.display = 'none';
+            const btn = document.getElementById('mainBidBtn');
+            btn.textContent = `BID ${formatMoney(amt)}`;
+            btn.dataset.nextAmt = amt;
+            btn.dataset.customActive = 'true';
+            document.getElementById('customBidSelector').style.display = 'none';
         } else {
-            showToast(validation.reason || 'Invalid bid amount', 'error');
+            showToast(validation.reason || 'Invalid amount', 'error');
         }
     }
     if (e.target.id === 'myTeamBtn') {
@@ -346,11 +345,15 @@ window.onclick = function(event) {
     }
 }
 
-// Input listener for emergency end confirmation
+// Input listener for emergency end confirmation and custom bid preview
 document.addEventListener('input', (e) => {
     if (e.target.id === 'emergencyConfirmInput') {
         const btn = document.getElementById('confirmEmergencyEndBtn');
         btn.disabled = e.target.value !== 'END';
+    }
+    if (e.target.id === 'customBidInput') {
+        const val = parseInt(e.target.value) || 0;
+        document.getElementById('previewAmount').textContent = formatMoney(val);
     }
 });
 

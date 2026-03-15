@@ -56,7 +56,10 @@
                     <div id="bidderNameDisplay">No bids yet</div>
                     <div id="timerDisplay">⏱️ 10s</div>
 
-                    <button id="mainBidBtn" class="bid-button">BID +₹5 LAKH</button>
+                    <div class="bid-controls">
+                        <button id="mainBidBtn" class="bid-button">BID +₹5 LAKH</button>
+                        <button id="customBidBtn" class="custom-bid-trigger">💰 CUSTOM BID</button>
+                    </div>
 
                     <div id="adminPanel" style="display: none; margin-top: 20px;">
                         <button id="dismissBtn" style="display: none;" class="danger">DISMISS (No Bids)</button>
@@ -72,23 +75,28 @@
                     <button id="remainingBtn">📋 REMAINING PLAYERS</button>
                     <button id="upcomingBtn">📅 UPCOMING PLAYERS</button>
                     <button id="allTeamsBtn">👥 ALL TEAMS</button>
-                    <button id="customBidBtn">💰 CUSTOM BID</button>
                 </div>
 
-                <div id="customBidInputArea" style="display: none;" class="info-box">
-                    <div class="info-title">Custom Bid</div>
-                    <input type="number" id="customBidInput" placeholder="Lakhs (e.g. 50)">
-                    <div class="quick-bids" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">
-                        <button class="small-btn" onclick="addCustomVal(5)">+5L</button>
-                        <button class="small-btn" onclick="addCustomVal(10)">+10L</button>
-                    </div>
-                    <button id="placeCustomBidBtn">PLACE BID</button>
-                </div>
-
-                <div class="info-box">
-                    <div class="info-title">Activity Feed</div>
-                    <div id="activityFeed">
-                        <div class="activity-item">Waiting for auction state...</div>
+                <div id="customBidSelector" class="modal">
+                    <div class="modal-content custom-bid-content">
+                        <span class="close" onclick="document.getElementById('customBidSelector').style.display='none'">&times;</span>
+                        <h2>SET CUSTOM BID</h2>
+                        <div class="custom-bid-body">
+                            <div class="bid-input-group">
+                                <label>ENTER TOTAL AMOUNT (Lakhs):</label>
+                                <input type="number" id="customBidInput" placeholder="e.g. 150">
+                            </div>
+                            <div class="quick-bid-grid">
+                                <button onclick="addCustomVal(10)">+10L</button>
+                                <button onclick="addCustomVal(25)">+25L</button>
+                                <button onclick="addCustomVal(50)">+50L</button>
+                                <button onclick="addCustomVal(100)">+100L</button>
+                            </div>
+                            <div id="customBidPreview" class="bid-preview">
+                                TOTAL BID: <span id="previewAmount">₹0</span>
+                            </div>
+                            <button id="confirmCustomBidBtn" class="confirm-btn">OK</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -129,3 +137,4 @@
     <script src="/js/main.js"></script>
 </body>
 </html>
+<div id="toastContainer"></div>
