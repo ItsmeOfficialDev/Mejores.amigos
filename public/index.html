@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mejores Amigos - Auction Game</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="landing-page">
+    <div class="container">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O27UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo">
+        <h1>MEJORES AMIGOS FANTASY FOOTBALL AUCTION</h1>
+        <div class="join-form">
+            <input type="text" id="nameInput" placeholder="Enter Your Name">
+            <div id="adminPasswordField" style="display: none;">
+                <input type="password" id="passwordInput" placeholder="Admin Password">
+            </div>
+            <button id="joinBtn">JOIN AUCTION</button>
+            <p id="errorMessage" class="error"></p>
+        </div>
+        <div class="footer-links">
+            <a href="/about.html">ABOUT</a>
+            <a href="/help.html">HELP</a>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        const nameInput = document.getElementById('nameInput');
+        const adminField = document.getElementById('adminPasswordField');
+        const joinBtn = document.getElementById('joinBtn');
+        const errorMsg = document.getElementById('errorMessage');
+
+        nameInput.addEventListener('input', () => {
+            if (nameInput.value.toLowerCase().endsWith('admin')) {
+                adminField.style.display = 'block';
+            } else {
+                adminField.style.display = 'none';
+            }
+        });
+
+        joinBtn.addEventListener('click', () => {
+            const name = nameInput.value;
+            const password = document.getElementById('passwordInput').value;
+            localStorage.removeItem('playerToken'); // Clear old token on manual join
+            localStorage.setItem('playerName', name);
+            if (name.toLowerCase().endsWith('admin')) {
+                socket.emit('join', { name, password });
+            } else {
+                socket.emit('join', { name });
+            }
+        });
+    </script>
+</body>
+</html>

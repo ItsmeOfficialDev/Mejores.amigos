@@ -1,0 +1,52 @@
+Server running on port 3000
+New connection: 78Lima2THoQaX6BzAAAB
+Join request: ishanadmin undefined 78Lima2THoQaX6BzAAAB
+User Ishan joined. Admin: true
+User disconnected: Ishan
+New connection: UOkoStqDppCfnU0cAAAD
+Join request: Ishan fy3hqc4tj UOkoStqDppCfnU0cAAAD
+User Ishan reconnected. Admin: true
+New connection: AAUpINOsj0yLa3bAAAAF
+Join request: Rohit undefined AAUpINOsj0yLa3bAAAAF
+User Rohit joined. Admin: false
+User disconnected: Rohit
+New connection: 0-lBQ2u3KhL1FK2gAAAH
+Join request: Rohit yd1ykdtsr 0-lBQ2u3KhL1FK2gAAAH
+User Rohit reconnected. Admin: false
+New connection: hZ1I90xljg-YzPayAAAJ
+Join request: Virat undefined hZ1I90xljg-YzPayAAAJ
+User Virat joined. Admin: false
+User disconnected: Virat
+New connection: gzPfzWNcB2ck99xdAAAL
+Join request: Virat o9dh2gvss gzPfzWNcB2ck99xdAAAL
+User Virat reconnected. Admin: false
+New connection: GZU0rY4g99KsfZU-AAAN
+Join request: Rahul undefined GZU0rY4g99KsfZU-AAAN
+User Rahul joined. Admin: false
+User disconnected: Rahul
+New connection: YOP6oe82uyKio2YlAAAP
+Join request: Rahul qj5gcmbgw YOP6oe82uyKio2YlAAAP
+User Rahul reconnected. Admin: false
+Initializing Auction...
+User disconnected: Virat
+User disconnected: Rahul
+User disconnected: Rohit
+User disconnected: Ishan
+New connection: pc9fStvDPGw3FDYrAAAU
+New connection: ePjoMAXe6x5N7yBxAAAV
+New connection: E1MuFva-Qr_9YQb0AAAW
+New connection: 48Wc94jgojW5g8gbAAAX
+Join request: Rohit yd1ykdtsr pc9fStvDPGw3FDYrAAAU
+User Rohit reconnected. Admin: false
+Join request: Ishan fy3hqc4tj 48Wc94jgojW5g8gbAAAX
+User Ishan reconnected. Admin: true
+Join request: Rahul qj5gcmbgw ePjoMAXe6x5N7yBxAAAV
+User Rahul reconnected. Admin: false
+Join request: Virat o9dh2gvss E1MuFva-Qr_9YQb0AAAW
+User Virat reconnected. Admin: false
+User disconnected: Rohit
+User disconnected: Virat
+User disconnected: Rahul
+User disconnected: Ishan
+Ending auction: emergency
+Running random allocation...

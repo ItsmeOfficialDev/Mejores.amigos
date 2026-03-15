@@ -1,0 +1,5 @@
+node_modules
+server_output.log
+verification/*.png
+.pytest_cache
+__pycache__
