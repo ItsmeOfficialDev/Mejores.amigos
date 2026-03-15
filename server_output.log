@@ -1,52 +1,81 @@
+
+> app@1.0.0 start
+> node server.js
+
 Server running on port 3000
-New connection: 78Lima2THoQaX6BzAAAB
-Join request: ishanadmin undefined 78Lima2THoQaX6BzAAAB
+New connection: tBzcfrmEqkTTzxUrAAAB
+Join request: ishanadmin undefined tBzcfrmEqkTTzxUrAAAB
 User Ishan joined. Admin: true
 User disconnected: Ishan
-New connection: UOkoStqDppCfnU0cAAAD
-Join request: Ishan fy3hqc4tj UOkoStqDppCfnU0cAAAD
+New connection: BOxOH8O7uz3_w89TAAAD
+Join request: Ishan bj0iv0ued BOxOH8O7uz3_w89TAAAD
 User Ishan reconnected. Admin: true
-New connection: AAUpINOsj0yLa3bAAAAF
-Join request: Rohit undefined AAUpINOsj0yLa3bAAAAF
+New connection: QHfjThMa491_yYOjAAAF
+Join request: Ishan bj0iv0ued QHfjThMa491_yYOjAAAF
+User Ishan reconnected. Admin: true
+User disconnected: Ishan
+New connection: 1Tb7fZuVaPvh9Ow6AAAH
+Join request: Ishan bj0iv0ued 1Tb7fZuVaPvh9Ow6AAAH
+User Ishan reconnected. Admin: true
+User disconnected: Ishan
+New connection: y8qZwx0I5PsDSUGmAAAJ
+Join request: ishanadmin undefined y8qZwx0I5PsDSUGmAAAJ
+User Ishan reconnected. Admin: true
+User disconnected: Ishan
+New connection: HNpddnKsukGQ8dhVAAAL
+Join request: Ishan bj0iv0ued HNpddnKsukGQ8dhVAAAL
+User Ishan reconnected. Admin: true
+New connection: 6vLwsgMvGKVhEfnQAAAN
+Join request: Player0 undefined 6vLwsgMvGKVhEfnQAAAN
+User disconnected: Ishan
+New connection: aZyXmhHIbPw_gffpAAAP
+Join request: ishanadmin undefined aZyXmhHIbPw_gffpAAAP
+User Ishan joined. Admin: true
+User disconnected: Ishan
+New connection: TZ8Je6GHGdj_9qoTAAAR
+Join request: Ishan 9u1ytbivu TZ8Je6GHGdj_9qoTAAAR
+User Ishan reconnected. Admin: true
+New connection: 32YvZFnBCyste9fvAAAT
+Join request: Rohit undefined 32YvZFnBCyste9fvAAAT
 User Rohit joined. Admin: false
 User disconnected: Rohit
-New connection: 0-lBQ2u3KhL1FK2gAAAH
-Join request: Rohit yd1ykdtsr 0-lBQ2u3KhL1FK2gAAAH
+New connection: 9UpuWKrAJh1pwo0lAAAV
+Join request: Rohit 09tvdvosp 9UpuWKrAJh1pwo0lAAAV
 User Rohit reconnected. Admin: false
-New connection: hZ1I90xljg-YzPayAAAJ
-Join request: Virat undefined hZ1I90xljg-YzPayAAAJ
+New connection: i8jtI4pwJ2sH23EAAAAX
+Join request: Virat undefined i8jtI4pwJ2sH23EAAAAX
 User Virat joined. Admin: false
 User disconnected: Virat
-New connection: gzPfzWNcB2ck99xdAAAL
-Join request: Virat o9dh2gvss gzPfzWNcB2ck99xdAAAL
+New connection: _u6ut12VHfLaluAPAAAZ
+Join request: Virat rmamafa8l _u6ut12VHfLaluAPAAAZ
 User Virat reconnected. Admin: false
-New connection: GZU0rY4g99KsfZU-AAAN
-Join request: Rahul undefined GZU0rY4g99KsfZU-AAAN
+New connection: NJZPIbvaY1YPi9Z7AAAb
+Join request: Rahul undefined NJZPIbvaY1YPi9Z7AAAb
 User Rahul joined. Admin: false
 User disconnected: Rahul
-New connection: YOP6oe82uyKio2YlAAAP
-Join request: Rahul qj5gcmbgw YOP6oe82uyKio2YlAAAP
+New connection: 9jgbjF2DH5_OrMM8AAAd
+Join request: Rahul 26gn1rhv3 9jgbjF2DH5_OrMM8AAAd
 User Rahul reconnected. Admin: false
 Initializing Auction...
 User disconnected: Virat
-User disconnected: Rahul
 User disconnected: Rohit
+User disconnected: Rahul
 User disconnected: Ishan
-New connection: pc9fStvDPGw3FDYrAAAU
-New connection: ePjoMAXe6x5N7yBxAAAV
-New connection: E1MuFva-Qr_9YQb0AAAW
-New connection: 48Wc94jgojW5g8gbAAAX
-Join request: Rohit yd1ykdtsr pc9fStvDPGw3FDYrAAAU
-User Rohit reconnected. Admin: false
-Join request: Ishan fy3hqc4tj 48Wc94jgojW5g8gbAAAX
-User Ishan reconnected. Admin: true
-Join request: Rahul qj5gcmbgw ePjoMAXe6x5N7yBxAAAV
+New connection: PUAl4ztNN8jbXhOYAAAi
+New connection: naw7z_tnXO-NPAw7AAAj
+New connection: 0X3G25tH_4PSMV2iAAAk
+Join request: Rahul 26gn1rhv3 PUAl4ztNN8jbXhOYAAAi
 User Rahul reconnected. Admin: false
-Join request: Virat o9dh2gvss E1MuFva-Qr_9YQb0AAAW
+New connection: ouJCJ0QNASnjKaJPAAAl
+Join request: Virat rmamafa8l naw7z_tnXO-NPAw7AAAj
 User Virat reconnected. Admin: false
-User disconnected: Rohit
+Join request: Rohit 09tvdvosp ouJCJ0QNASnjKaJPAAAl
+User Rohit reconnected. Admin: false
+Join request: Ishan 9u1ytbivu 0X3G25tH_4PSMV2iAAAk
+User Ishan reconnected. Admin: true
 User disconnected: Virat
-User disconnected: Rahul
 User disconnected: Ishan
+User disconnected: Rahul
+User disconnected: Rohit
 Ending auction: emergency
 Running random allocation...

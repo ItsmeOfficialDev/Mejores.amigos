@@ -6,61 +6,93 @@
     <title>Live Auction - Mejores Amigos</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="auction-page">
-    <div id="toastContainer"></div>
+<body>
+    <div id="bidNotification" class="bid-notification">🔥 BID PLACED! 🔥</div>
 
-    <header>
-        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O27UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo tiny">
-        <div id="pauseBanner" style="display: none;">AUCTION PAUSED BY ADMIN</div>
-    </header>
+    <div class="container">
+        <header class="header">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O27UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo">
+            <div class="title">Mejores Amigos</div>
+            <div id="pauseBanner" style="display: none;">AUCTION PAUSED BY ADMIN</div>
+        </header>
 
-    <main>
-        <section id="currentPlayerArea">
-            <h1 id="playerNameDisplay">LOADING...</h1>
-            <span id="positionBadge">---</span>
-            <div id="currentBidArea">
-                <p>CURRENT BID</p>
-                <h2 id="bidAmountDisplay">₹0</h2>
-                <p id="bidderNameDisplay">---</p>
-            </div>
-            <div id="timerDisplay">⏱️ 10s</div>
+        <div class="main-grid">
+            <div class="left-col">
+                <div class="user-stats-bar">
+                    <div class="stat-item">
+                        <div class="stat-label">Player</div>
+                        <div class="stat-value" id="currentUserNameDisplay">---</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Budget</div>
+                        <div class="stat-value" id="userBudget">₹15.00 Cr</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">GK</div>
+                        <div class="stat-value" id="gkCount">0/3</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">DEF</div>
+                        <div class="stat-value" id="defCount">0/5</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">MID</div>
+                        <div class="stat-value" id="midCount">0/5</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">FWD</div>
+                        <div class="stat-value" id="fwdCount">0/5</div>
+                    </div>
+                </div>
 
-            <div id="biddingControls">
-                <button id="mainBidBtn" class="bid-btn">BID +₹5 LAKH (₹10 LAKH)</button>
-                <button id="customBidBtn">CUSTOM BID</button>
-                <div id="customBidInputArea" style="display: none;">
-                    <input type="number" id="customBidInput" placeholder="Enter amount in Lakhs">
-                    <button id="placeCustomBidBtn">PLACE BID</button>
+                <div class="auction-card">
+                    <div id="goatBadge" class="goat-badge" style="display:none;">🐐 GOAT</div>
+                    <img id="playerImageDisplay" class="player-image" src="" alt="Player">
+                    <h2 id="playerNameDisplay">LOADING...</h2>
+                    <span id="positionBadge">---</span>
+
+                    <div id="bidAmountDisplay">₹0</div>
+                    <div id="bidderNameDisplay">No bids yet</div>
+                    <div id="timerDisplay">⏱️ 10s</div>
+
+                    <button id="mainBidBtn" class="bid-button">BID +₹5 LAKH</button>
+
+                    <div id="adminPanel" style="display: none; margin-top: 20px;">
+                        <button id="dismissBtn" style="display: none;" class="danger">DISMISS (No Bids)</button>
+                        <button id="pauseBtn">⏸️ PAUSE AUCTION</button>
+                        <button id="emergencyEndBtn" class="danger">⚡ EMERGENCY END</button>
+                    </div>
                 </div>
             </div>
-        </section>
 
-        <section id="adminPanel" style="display: none;">
-            <h3>ADMIN CONTROLS 👑</h3>
-            <button id="dismissBtn" style="display: none;" class="danger">DISMISS (No Bids)</button>
-            <button id="pauseBtn">⏸️ PAUSE AUCTION</button>
-            <button id="emergencyEndBtn" class="danger">⚡ EMERGENCY END</button>
-        </section>
-    </main>
+            <div class="right-col">
+                <div class="action-buttons">
+                    <button id="myTeamBtn">👤 MY TEAM</button>
+                    <button id="remainingBtn">📋 REMAINING PLAYERS</button>
+                    <button id="upcomingBtn">📅 UPCOMING PLAYERS</button>
+                    <button id="allTeamsBtn">👥 ALL TEAMS</button>
+                    <button id="customBidBtn">💰 CUSTOM BID</button>
+                </div>
 
-    <footer>
-        <div class="user-stats">
-            <div class="stat">
-                <span>💰 BUDGET</span>
-                <span id="userBudget">₹15.00 Cr</span>
-            </div>
-            <div class="positions-grid">
-                <div class="pos-stat">GK: <span id="gkCount">0/3</span></div>
-                <div class="pos-stat">DEF: <span id="defCount">0/5</span></div>
-                <div class="pos-stat">MID: <span id="midCount">0/5</span></div>
-                <div class="pos-stat">FWD: <span id="fwdCount">0/5</span></div>
+                <div id="customBidInputArea" style="display: none;" class="info-box">
+                    <div class="info-title">Custom Bid</div>
+                    <input type="number" id="customBidInput" placeholder="Lakhs (e.g. 50)">
+                    <div class="quick-bids" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px;">
+                        <button class="small-btn" onclick="addCustomVal(5)">+5L</button>
+                        <button class="small-btn" onclick="addCustomVal(10)">+10L</button>
+                    </div>
+                    <button id="placeCustomBidBtn">PLACE BID</button>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-title">Activity Feed</div>
+                    <div id="activityFeed">
+                        <div class="activity-item">Waiting for auction state...</div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="action-buttons">
-            <button id="myTeamBtn">👤 MY TEAM</button>
-            <button id="remainingBtn">📋 REMAINING</button>
-        </div>
-    </footer>
+    </div>
 
     <!-- Modals -->
     <div id="teamModal" class="modal">

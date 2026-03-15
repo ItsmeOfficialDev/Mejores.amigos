@@ -29,6 +29,15 @@ function navigate(page) {
     }
 }
 
+// Custom Bid Helper
+window.addCustomVal = function(val) {
+    const input = document.getElementById('customBidInput');
+    if (input) {
+        const current = parseInt(input.value) || 0;
+        input.value = current + val;
+    }
+};
+
 // Socket Events
 socket.on('error', (msg) => {
     const errorEl = document.getElementById('errorMessage');
@@ -85,6 +94,26 @@ socket.on('gameState', (state) => {
 
 socket.on('notification', (data) => {
     showToast(data.message, data.type);
+
+    // Update Activity Feed
+    const feed = document.getElementById('activityFeed');
+    if (feed) {
+        const item = document.createElement('div');
+        item.className = 'activity-item';
+        item.textContent = data.message;
+        feed.prepend(item);
+        if (feed.children.length > 20) feed.lastChild.remove();
+    }
+
+    // Big Bid Notification
+    if (data.type === 'bid') {
+        const bidNotif = document.getElementById('bidNotification');
+        if (bidNotif) {
+            bidNotif.textContent = `🔥 ${data.message.toUpperCase()} 🔥`;
+            bidNotif.classList.add('show');
+            setTimeout(() => bidNotif.classList.remove('show'), 1500);
+        }
+    }
 });
 
 socket.on('adminInactivityWarning', () => {
@@ -103,6 +132,8 @@ socket.on('auctionEnded', () => {
 
 socket.on('lobbyReset', (msg) => {
     alert(msg);
+    localStorage.removeItem('playerToken');
+    localStorage.removeItem('playerName');
     window.location.href = '/';
 });
 
@@ -134,6 +165,7 @@ function validateBid(amount) {
 function updateAuctionUI() {
     if (window.location.pathname.includes('auction.html')) {
         const pName = document.getElementById('playerNameDisplay');
+        const pImg = document.getElementById('playerImageDisplay');
         const pPos = document.getElementById('positionBadge');
         const bAmt = document.getElementById('bidAmountDisplay');
         const bName = document.getElementById('bidderNameDisplay');
@@ -144,6 +176,17 @@ function updateAuctionUI() {
         if (!gameState.currentPlayer) return;
 
         pName.textContent = gameState.currentPlayer.name;
+        if (pImg) pImg.src = gameState.currentPlayer.img || 'https://via.placeholder.com/150';
+
+        const userNameEl = document.getElementById('currentUserNameDisplay');
+        if (userNameEl && currentUser) userNameEl.textContent = currentUser.name;
+
+        const goats = ['Messi', 'Ronaldo', 'Pele', 'Maradona'];
+        const goatBadge = document.getElementById('goatBadge');
+        if (goatBadge) {
+            goatBadge.style.display = goats.some(g => gameState.currentPlayer.name.includes(g)) ? 'inline-block' : 'none';
+        }
+
         pPos.textContent = gameState.currentPlayer.position;
         pPos.className = `pos-${gameState.currentPlayer.position}`;
         bAmt.textContent = formatMoney(gameState.currentBid);
@@ -267,6 +310,12 @@ document.addEventListener('click', (e) => {
     if (e.target.id === 'remainingBtn') {
         showModal('Remaining Players', renderRemaining());
     }
+    if (e.target.id === 'upcomingBtn') {
+        showModal('Upcoming Players', renderUpcoming());
+    }
+    if (e.target.id === 'allTeamsBtn') {
+        showModal('All Teams', renderAllTeams());
+    }
 });
 
 // Re-connect logic
@@ -330,6 +379,28 @@ function renderRemaining() {
             <p>Forwards: ${counts.FWD}</p>
         </div>
     `;
+}
+
+function renderUpcoming() {
+    if (!gameState || !gameState.upcomingPlayers) return '<p>No data</p>';
+    let html = '<ul>';
+    gameState.upcomingPlayers.forEach(p => {
+        html += `<li>${p.name} (${p.position})</li>`;
+    });
+    html += '</ul>';
+    return html;
+}
+
+function renderAllTeams() {
+    if (!gameState || !gameState.users) return '<p>No data</p>';
+    let html = '';
+    gameState.users.forEach(u => {
+        html += `<div style="margin-bottom: 20px;">
+            <h3>${u.isAdmin ? '👑 ' : ''}${u.name} (${formatMoney(u.budget)})</h3>
+            ${renderTeam(u.name)}
+        </div>`;
+    });
+    return html;
 }
 
 function updateResultsUI() {
