@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Auction - Mejores Amigos</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auction-page">
+    <div id="toastContainer"></div>
+
+    <header>
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O27UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo tiny">
+        <div id="pauseBanner" style="display: none;">AUCTION PAUSED BY ADMIN</div>
+    </header>
+
+    <main>
+        <section id="currentPlayerArea">
+            <h1 id="playerNameDisplay">LOADING...</h1>
+            <span id="positionBadge">---</span>
+            <div id="currentBidArea">
+                <p>CURRENT BID</p>
+                <h2 id="bidAmountDisplay">₹0</h2>
+                <p id="bidderNameDisplay">---</p>
+            </div>
+            <div id="timerDisplay">⏱️ 10s</div>
+
+            <div id="biddingControls">
+                <button id="mainBidBtn" class="bid-btn">BID +₹5 LAKH (₹10 LAKH)</button>
+                <button id="customBidBtn">CUSTOM BID</button>
+                <div id="customBidInputArea" style="display: none;">
+                    <input type="number" id="customBidInput" placeholder="Enter amount in Lakhs">
+                    <button id="placeCustomBidBtn">PLACE BID</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="adminPanel" style="display: none;">
+            <h3>ADMIN CONTROLS 👑</h3>
+            <button id="dismissBtn" style="display: none;" class="danger">DISMISS (No Bids)</button>
+            <button id="pauseBtn">⏸️ PAUSE AUCTION</button>
+            <button id="emergencyEndBtn" class="danger">⚡ EMERGENCY END</button>
+        </section>
+    </main>
+
+    <footer>
+        <div class="user-stats">
+            <div class="stat">
+                <span>💰 BUDGET</span>
+                <span id="userBudget">₹15.00 Cr</span>
+            </div>
+            <div class="positions-grid">
+                <div class="pos-stat">GK: <span id="gkCount">0/3</span></div>
+                <div class="pos-stat">DEF: <span id="defCount">0/5</span></div>
+                <div class="pos-stat">MID: <span id="midCount">0/5</span></div>
+                <div class="pos-stat">FWD: <span id="fwdCount">0/5</span></div>
+            </div>
+        </div>
+        <div class="action-buttons">
+            <button id="myTeamBtn">👤 MY TEAM</button>
+            <button id="remainingBtn">📋 REMAINING</button>
+        </div>
+    </footer>
+
+    <!-- Modals -->
+    <div id="teamModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">My Team</h2>
+            <div id="teamList"></div>
+        </div>
+    </div>
+
+    <div id="emergencyModal" class="modal">
+        <div class="modal-content danger-border">
+            <h2>EMERGENCY END AUCTION</h2>
+            <p>You are about to end the auction immediately. All unsold players will be randomly distributed to participants at a fixed price of ₹10 Lakh each. Position limits will be respected during allocation. This cannot be undone.</p>
+            <p>Type "END" to confirm:</p>
+            <input type="text" id="emergencyConfirmInput" placeholder="Type END here">
+            <div class="modal-actions">
+                <button id="cancelEmergencyBtn">CANCEL</button>
+                <button id="confirmEmergencyEndBtn" class="danger" disabled>CONFIRM END</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="inactivityModal" class="modal">
+        <div class="modal-content">
+            <h2>⚠️ INACTIVITY WARNING</h2>
+            <p>You have been inactive. Click below to keep admin status. If no response in 1 minute, admin will be transferred.</p>
+            <button id="stayActiveBtn">STAY ACTIVE</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>

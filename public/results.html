@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - Mejores Amigos</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="results-page">
+    <div class="container">
+        <h1>🏆 AUCTION COMPLETED 🏆</h1>
+        <div id="emergencyBanner" style="display: none;" class="banner danger">
+            ⚠️ Auction ended early by admin. Unsold players were randomly allocated at ₹10 Lakh each.
+        </div>
+
+        <div class="view-selector">
+            <label for="userSelect">View Team:</label>
+            <select id="userSelect"></select>
+        </div>
+
+        <div id="teamDisplayArea">
+            <h2 id="viewingName">---</h2>
+            <p>Budget Remaining: <span id="finalBudget">₹0</span></p>
+            <p>Total Spent: <span id="totalSpent">₹0</span></p>
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Player Name</th>
+                        <th>Position</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+
+        <div class="export-controls">
+            <button id="downloadPdf">📄 DOWNLOAD PDF</button>
+            <button id="downloadCsv">📊 DOWNLOAD CSV</button>
+            <button id="downloadJson">📦 DOWNLOAD JSON</button>
+        </div>
+
+        <div id="adminResetArea" style="display: none;">
+             <button id="startNewBtn">🔄 START NEW AUCTION</button>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>

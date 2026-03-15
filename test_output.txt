@@ -1,0 +1,12 @@
+
+> app@1.0.0 test
+> mocha test/*.test.js
+
+
+
+  Mejores Amigos Auction Game
+    ✔ should allow a player to join the lobby (71ms)
+    ✔ should identify an admin correctly
+
+
+  2 passing (113ms)
