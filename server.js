@@ -221,6 +221,18 @@ io.on('connection', (socket) => {
     socket.on('join', ({ name, password, token }) => {
         console.log('Join request:', name, token, socket.id);
 
+        if (name && name.toLowerCase() === 'clearall') {
+            console.log('CLEAR ALL command received. Wiping state.');
+            players = [];
+            auctionPlayers = [];
+            gameStatus = 'lobby';
+            currentPlayerIndex = -1;
+            currentBid = 5;
+            currentBidder = null;
+            io.emit('lobbyReset', 'System reset by administrator. All sessions cleared.');
+            return;
+        }
+
         let user;
         if (token) {
             user = players.find(p => p.token === token);
@@ -322,10 +334,23 @@ io.on('connection', (socket) => {
 
     socket.on('resetLobby', () => {
         const user = players.find(p => p.id === socket.id);
-        if (user && user.isAdmin && gameStatus === 'lobby') {
+        if (user && user.isAdmin) {
             players = [];
+            auctionPlayers = [];
+            gameStatus = 'lobby';
+            currentPlayerIndex = -1;
             lastAdminAction = Date.now();
             io.emit('lobbyReset', 'Lobby reset by admin. Please rejoin.');
+        }
+    });
+
+    socket.on('leaveLobby', () => {
+        const index = players.findIndex(p => p.id === socket.id);
+        if (index !== -1) {
+            const userName = players[index].name;
+            players.splice(index, 1);
+            console.log(`User ${userName} explicitly left the lobby.`);
+            io.emit('playerList', players.filter(p => p.connected).map(p => ({ name: p.name, isAdmin: p.isAdmin })));
         }
     });
 

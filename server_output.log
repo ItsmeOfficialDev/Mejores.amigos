@@ -3,18 +3,18 @@
 > node server.js
 
 Server running on port 3000
-New connection: N7XCN3cxHw7uWkCmAAAB
-Join request: ishanadmin undefined N7XCN3cxHw7uWkCmAAAB
+New connection: qjiSHr-zmmq2vInVAAAB
+Join request: ishanadmin undefined qjiSHr-zmmq2vInVAAAB
 User Ishan joined. Admin: true
 User disconnected: Ishan
-New connection: Rbu_GfTVg0zY7wu3AAAD
-Join request: Ishan okhqdzfny Rbu_GfTVg0zY7wu3AAAD
+New connection: wPFl9NHIw6n9hI7PAAAD
+Join request: Ishan jlgjooya7 wPFl9NHIw6n9hI7PAAAD
 User Ishan reconnected. Admin: true
-New connection: wGg3L9iHr1aK_td_AAAF
-Join request: Player0 undefined wGg3L9iHr1aK_td_AAAF
-New connection: 3-nh5W_GmuOUSd1_AAAH
-Join request: Player1 undefined 3-nh5W_GmuOUSd1_AAAH
-New connection: PeIVdQIyTtaVPZTJAAAJ
-Join request: Player2 undefined PeIVdQIyTtaVPZTJAAAJ
+New connection: -6G40bTS3SK_tR4oAAAF
+Join request: Player0 undefined -6G40bTS3SK_tR4oAAAF
+New connection: lTtMxo6WJJTcJDxoAAAH
+Join request: Player1 undefined lTtMxo6WJJTcJDxoAAAH
+New connection: X-PtXGZIBts2d-TWAAAJ
+Join request: Player2 undefined X-PtXGZIBts2d-TWAAAJ
 User disconnected: Ishan
 Terminated

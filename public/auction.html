@@ -11,8 +11,17 @@
 
     <div class="container">
         <header class="header">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O27UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O27UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo small">
             <div class="title">Mejores Amigos</div>
+
+            <div class="top-right-players">
+                <button id="showPlayersBtn" class="icon-btn">👥 <span id="playerBadgeCount">0</span></button>
+                <div id="playersDropdown" class="players-dropdown" style="display: none;">
+                    <h4>CONNECTED</h4>
+                    <ul id="connectedPlayerList"></ul>
+                </div>
+            </div>
+
             <div id="pauseBanner" style="display: none;">AUCTION PAUSED BY ADMIN</div>
         </header>
 
