@@ -85,6 +85,7 @@ function resetAuctionTimer() {
 
 function broadcastState() {
     const remaining = auctionPlayers.slice(currentPlayerIndex).filter(p => !p.sold);
+    const upcoming = remaining.slice(1, 11); // Show next 10 players
     const counts = {
         GK: remaining.filter(p => p.position === 'GK').length,
         DEF: remaining.filter(p => p.position === 'DEF').length,
@@ -100,6 +101,7 @@ function broadcastState() {
         timerEnd,
         hasReceivedBid,
         remainingCounts: counts,
+        upcomingPlayers: upcoming.map(p => ({ name: p.name, position: p.position })),
         users: players.map(p => ({
             name: p.name,
             isAdmin: p.isAdmin,
@@ -404,5 +406,9 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+if (require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = { app, server, io };
