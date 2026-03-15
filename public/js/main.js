@@ -61,17 +61,31 @@ socket.on('joined', ({ user, gameStatus }) => {
 });
 
 socket.on('playerList', (list) => {
+    // Lobby List
     const listEl = document.getElementById('playerList');
     const countEl = document.getElementById('playerCount');
-    if (!listEl) return;
-
-    listEl.innerHTML = '';
-    list.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = `${p.isAdmin ? '👑 ' : ''}${p.name}`;
-        listEl.appendChild(li);
-    });
+    if (listEl) {
+        listEl.innerHTML = '';
+        list.forEach(p => {
+            const li = document.createElement('li');
+            li.textContent = `${p.isAdmin ? '👑 ' : ''}${p.name}`;
+            listEl.appendChild(li);
+        });
+    }
     if (countEl) countEl.textContent = list.length;
+
+    // Top Right Dropdown (Auction Screen)
+    const dropdownList = document.getElementById('connectedPlayerList');
+    const badgeCount = document.getElementById('playerBadgeCount');
+    if (dropdownList) {
+        dropdownList.innerHTML = '';
+        list.forEach(p => {
+            const li = document.createElement('li');
+            li.textContent = `${p.isAdmin ? '👑 ' : ''}${p.name}`;
+            dropdownList.appendChild(li);
+        });
+    }
+    if (badgeCount) badgeCount.textContent = list.length;
 
     // Admin controls
     const adminControls = document.getElementById('adminControls');
@@ -243,7 +257,12 @@ function startLocalTimer() {
 document.addEventListener('click', (e) => {
     if (e.target.id === 'startBtn') socket.emit('startAuction');
     if (e.target.id === 'resetBtn') socket.emit('resetLobby');
-    if (e.target.id === 'exitBtn') window.location.href = '/';
+    if (e.target.id === 'exitBtn') {
+        socket.emit('leaveLobby');
+        localStorage.removeItem('playerToken');
+        localStorage.removeItem('playerName');
+        window.location.href = '/';
+    }
     if (e.target.id === 'mainBidBtn') {
         const amt = parseInt(e.target.dataset.nextAmt);
         const validation = validateBid(amt);
@@ -271,6 +290,10 @@ document.addEventListener('click', (e) => {
             socket.emit('emergencyEnd', 'END');
             document.getElementById('emergencyModal').style.display = 'none';
         }
+    }
+    if (e.target.id === 'showPlayersBtn') {
+        const dropdown = document.getElementById('playersDropdown');
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
     }
     if (e.target.id === 'cancelEmergencyBtn') {
         document.getElementById('emergencyModal').style.display = 'none';
@@ -450,39 +473,60 @@ function setupExportListeners(user) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        // Add Logo (if possible, using text for now to avoid cross-origin issues with jsPDF/Images)
-        doc.setFontSize(22);
-        doc.setTextColor(245, 158, 11); // Gold
-        doc.text("MEJORES AMIGOS", 105, 20, { align: "center" });
+        // Custom Styled Header
+        doc.setFontSize(40);
+        doc.setTextColor(67, 56, 202); // Indigo primary
+        doc.text(user.name.toUpperCase(), 105, 40, { align: "center" });
 
+        doc.setDrawColor(251, 191, 36); // Gold
+        doc.setLineWidth(1);
+        doc.line(40, 45, 170, 45);
+
+        doc.setFontSize(14);
+        doc.setTextColor(100, 116, 139);
+        doc.text("MEJORES AMIGOS AUCTION SQUAD", 105, 55, { align: "center" });
+
+        // Player List
+        let currentY = 75;
         doc.setFontSize(16);
         doc.setTextColor(0, 0, 0);
-        doc.text(`Auction Results - ${user.name}`, 105, 30, { align: "center" });
 
-        doc.setFontSize(10);
-        doc.text(`Date: ${new Date().toLocaleDateString()}`, 196, 40, { align: "right" });
+        user.team.forEach((p, index) => {
+            if (currentY > 270) {
+                doc.addPage();
+                currentY = 20;
+            }
+            doc.setFont("helvetica", "bold");
+            doc.text(`${index + 1}. ${p.name}`, 20, currentY);
+            doc.setFont("helvetica", "normal");
+            doc.text(`(${p.position})`, 120, currentY);
+            doc.setTextColor(16, 185, 129); // Green
+            doc.text(`${formatMoney(p.price)}`, 170, currentY, { align: "right" });
+            doc.setTextColor(0, 0, 0);
 
-        doc.autoTable({
-            startY: 45,
-            head: [['#', 'Player Name', 'Position', 'Price']],
-            body: user.team.map((p, i) => [i + 1, p.name, p.position, formatMoney(p.price)]),
-            headStyles: { fillStyle: [30, 41, 59] }, // bg-card color
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.1);
+            doc.line(20, currentY + 2, 190, currentY + 2);
+            currentY += 12;
         });
 
-        const finalY = doc.lastAutoTable.finalY + 10;
-        doc.setFontSize(12);
+        // Summary at Bottom
+        if (currentY > 250) {
+            doc.addPage();
+            currentY = 20;
+        }
+        currentY += 10;
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
         let totalSpent = user.team.reduce((sum, p) => sum + p.price, 0);
-        doc.text(`Total Spent: ${formatMoney(totalSpent)}`, 14, finalY);
-        doc.text(`Budget Remaining: ${formatMoney(user.budget)}`, 14, finalY + 7);
+        doc.text(`TOTAL SPENT: ${formatMoney(totalSpent)}`, 105, currentY, { align: "center" });
 
-        const posSum = `GK: ${user.positions.GK}/3, DEF: ${user.positions.DEF}/5, MID: ${user.positions.MID}/5, FWD: ${user.positions.FWD}/5`;
-        doc.text(`Position Summary: ${posSum}`, 14, finalY + 14);
+        doc.setFontSize(12);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Budget Remaining: ${formatMoney(user.budget)}`, 105, currentY + 10, { align: "center" });
+        doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 285, { align: "center" });
 
-        doc.setFontSize(8);
-        doc.setTextColor(100, 116, 139); // gray
-        doc.text("Private fantasy auction - for fun only", 105, 285, { align: "center" });
-
-        doc.save(`${user.name}_team.pdf`);
+        doc.save(`${user.name}_Squad.pdf`);
     };
 
     document.getElementById('downloadCsv').onclick = () => {
