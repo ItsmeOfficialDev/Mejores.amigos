@@ -262,8 +262,10 @@ document.addEventListener('click', (e) => {
         }
     }
     if (e.target.id === 'myTeamBtn') {
-        socket.emit('requestTeam'); // Need to implement this on server or use gameState
         showModal('My Team', renderTeam(currentUser.name));
+    }
+    if (e.target.id === 'remainingBtn') {
+        showModal('Remaining Players', renderRemaining());
     }
 });
 
@@ -315,6 +317,19 @@ function renderTeam(userName) {
     });
     html += '</table>';
     return html;
+}
+
+function renderRemaining() {
+    if (!gameState || !gameState.remainingCounts) return '<p>Loading...</p>';
+    const counts = gameState.remainingCounts;
+    return `
+        <div class="remaining-stats">
+            <p>Goalkeepers: ${counts.GK}</p>
+            <p>Defenders: ${counts.DEF}</p>
+            <p>Midfielders: ${counts.MID}</p>
+            <p>Forwards: ${counts.FWD}</p>
+        </div>
+    `;
 }
 
 function updateResultsUI() {

@@ -84,6 +84,14 @@ function resetAuctionTimer() {
 }
 
 function broadcastState() {
+    const remaining = auctionPlayers.slice(currentPlayerIndex).filter(p => !p.sold);
+    const counts = {
+        GK: remaining.filter(p => p.position === 'GK').length,
+        DEF: remaining.filter(p => p.position === 'DEF').length,
+        MID: remaining.filter(p => p.position === 'MID').length,
+        FWD: remaining.filter(p => p.position === 'FWD').length
+    };
+
     io.emit('gameState', {
         gameStatus,
         currentPlayer: auctionPlayers[currentPlayerIndex],
@@ -91,6 +99,7 @@ function broadcastState() {
         currentBidder,
         timerEnd,
         hasReceivedBid,
+        remainingCounts: counts,
         users: players.map(p => ({
             name: p.name,
             isAdmin: p.isAdmin,
