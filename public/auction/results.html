@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Auction Results</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0a0a0f; --surf: #0f0f18; --acc: #f5b942; --text: #f0eff8; --border: rgba(255,255,255,0.06); }
+        body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; padding: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { font-family: 'Syne'; font-size: 42px; text-align: center; margin-bottom: 40px; }
+        .team-box { background: var(--surf); border: 1px solid var(--border); border-radius: 24px; padding: 30px; margin-bottom: 30px; }
+        .team-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        th { color: #4e4d60; font-size: 12px; text-transform: uppercase; }
+        .btn-hub { display: block; width: fit-content; margin: 40px auto; background: var(--acc); color: #0a0a0f; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 Final Results</h1>
+        <div id="results-list"></div>
+        <a href="/hub.html" class="btn-hub">Back to Hub</a>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io('/auction');
+        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+
+        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
+
+        socket.on('stateUpdate', (state) => {
+            const list = document.getElementById('results-list');
+            list.innerHTML = state.players.map(p => `
+                <div class="team-box">
+                    <div class="team-header">
+                        <h2 style="margin:0; font-family:'Syne';">${p.name}'s Squad</h2>
+                        <span style="color:var(--acc); font-weight:bold;">Remaining: ${formatMoney(p.budget)}</span>
+                    </div>
+                    <div style="color: #9896aa; font-size: 13px; margin-bottom: 10px;">Players: ${p.teamSize}/18</div>
+                    <!-- Detailed player list would be here if the server sent it.
+                         For MVP, we show the summary. -->
+                </div>
+            `).join('');
+        });
+
+        function formatMoney(amount) {
+            if (amount < 100) return `₹${amount} Lakh`;
+            return `₹${(amount / 100).toFixed(2)} Crore`;
+        }
+    </script>
+</body>
+</html>

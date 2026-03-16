@@ -1,434 +1,213 @@
+require('dotenv').config();
+const startTime = Date.now();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const mongoose = require('mongoose');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const cookieParser = require('cookie-parser');
 const path = require('path');
-const allPlayers = require('./players');
+const axios = require('axios');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: { origin: "*" },
+  transports: ['websocket', 'polling']
+});
 
+// Models
+const User = require('./models/User');
+const Log = require('./models/Log');
+const BannedName = require('./models/BannedName');
+const Anime = require('./models/Anime');
+const ApprovedAnime = require('./models/ApprovedAnime');
+
+// Database Connection
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/test")
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+const sessionMiddleware = session({
+  secret: process.env.SESSION_SECRET || 'mejores-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI || "mongodb://localhost:27017/test" }),
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  }
+});
+app.use(sessionMiddleware);
+
+// Share session with Socket.io
+io.engine.use(sessionMiddleware);
+
+// Initialize Telegram Bot
+const botInit = require('./bot/bot');
+const bot = botInit(process.env.TELEGRAM_BOT_TOKEN, process.env.ADMIN_TELEGRAM_ID);
+
+// Socket Modules
+require('./socket/chess')(io);
+require('./socket/tictactoe')(io);
+require('./socket/auction')(io);
+
+// Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Game State
-let players = []; // { id, token, name, isAdmin, connected, lastSeen, team, budget, positions }
-let auctionPlayers = [];
-let currentPlayerIndex = -1;
-let gameStatus = 'lobby'; // 'lobby', 'active', 'paused', 'ended'
-let currentBid = 5;
-let currentBidder = null;
-let timerEnd = null;
-let timerInterval = null;
-let adminDisconnectTimer = null;
-let hasReceivedBid = false;
-let lastAdminAction = Date.now();
-let adminInactivityWarningSent = false;
-let lastPauseTime = 0;
-let pauseRemaining = 0;
+// Specific Routes
+app.get('/auction/lobby', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/lobby.html')));
+app.get('/auction', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/index.html')));
+app.get('/auction/results', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/results.html')));
 
-const MAX_POSITIONS = { GK: 3, DEF: 5, MID: 5, FWD: 5 };
-const TOTAL_SLOTS = 18;
-const STARTING_BUDGET = 1500; // 15 Crore in Lakhs
-const MIN_PLAYERS_TO_START = 4;
-const ADMIN_PASSWORD = '123456';
+// API Routes
+app.post('/api/login', async (req, res) => {
+  let { name, password } = req.body;
 
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+  // Secret Clear Command
+  if (name === 'clearall') {
+      await User.deleteMany({});
+      await Log.deleteMany({});
+      return res.json({ success: true, message: 'System cleared' });
+  }
+
+  if (!name || name.trim().length < 2 || name.trim().length > 20) {
+    return res.status(400).json({ error: 'Name must be 2-20 characters.' });
+  }
+
+  const nameLower = name.trim().toLowerCase();
+  const isBanned = await BannedName.findOne({ nameLower });
+  if (isBanned) return res.status(403).json({ error: 'This name has been banned.' });
+
+  let isMainAppAdmin = false;
+  let finalName = name.trim();
+
+  // Platform Admin Logic: Exactly "admin" or ends with "admin"
+  if (nameLower === 'admin' || nameLower.endsWith('admin')) {
+    if (password !== process.env.MAIN_APP_ADMIN_PASSWORD) {
+      return res.status(401).json({ error: 'Invalid admin password.' });
     }
-    return array;
-}
+    isMainAppAdmin = true;
+    if (nameLower === 'admin') finalName = 'Admin';
+    else finalName = finalName.slice(0, -5).trim();
+  }
 
-function initializeAuction() {
-    console.log('Initializing Auction...');
-    const playersByPosition = {
-        GK: shuffleArray(allPlayers.filter(p => p.position === 'GK')),
-        DEF: shuffleArray(allPlayers.filter(p => p.position === 'DEF')),
-        MID: shuffleArray(allPlayers.filter(p => p.position === 'MID')),
-        FWD: shuffleArray(allPlayers.filter(p => p.position === 'FWD'))
-    };
+  finalName = finalName.charAt(0).toUpperCase() + finalName.slice(1);
 
-    auctionPlayers = [
-        ...playersByPosition.GK,
-        ...playersByPosition.DEF,
-        ...playersByPosition.MID,
-        ...playersByPosition.FWD
-    ].map((p, index) => ({
-        ...p,
-        id: index,
-        sold: false,
-        winner: null,
-        price: 0
-    }));
-
-    currentPlayerIndex = 0;
-}
-
-function nextPlayer() {
-    currentPlayerIndex++;
-    if (currentPlayerIndex >= auctionPlayers.length) {
-        endAuction();
-        return;
-    }
-    resetAuctionTimer();
-}
-
-function resetAuctionTimer() {
-    currentBid = 5;
-    currentBidder = null;
-    hasReceivedBid = false;
-    timerEnd = Date.now() + 10000;
-    pauseRemaining = 10000;
-    broadcastState();
-}
-
-function broadcastState() {
-    const remaining = auctionPlayers.slice(currentPlayerIndex).filter(p => !p.sold);
-    const upcoming = remaining.slice(1, 11); // Show next 10 players
-    const counts = {
-        GK: remaining.filter(p => p.position === 'GK').length,
-        DEF: remaining.filter(p => p.position === 'DEF').length,
-        MID: remaining.filter(p => p.position === 'MID').length,
-        FWD: remaining.filter(p => p.position === 'FWD').length
-    };
-
-    io.emit('gameState', {
-        gameStatus,
-        currentPlayer: auctionPlayers[currentPlayerIndex],
-        currentBid,
-        currentBidder,
-        timerEnd,
-        hasReceivedBid,
-        remainingCounts: counts,
-        upcomingPlayers: upcoming.map(p => ({ name: p.name, position: p.position })),
-        users: players.map(p => ({
-            name: p.name,
-            isAdmin: p.isAdmin,
-            connected: p.connected,
-            budget: p.budget,
-            teamCount: p.team.length,
-            positions: p.positions,
-            team: p.team
-        }))
-    });
-}
-
-function endAuction(reason = 'completed') {
-    console.log(`Ending auction: ${reason}`);
-    gameStatus = 'ended';
-    if (reason === 'emergency') {
-        runRandomAllocation();
-    }
-    io.emit('auctionEnded', { reason });
-    if (timerInterval) clearInterval(timerInterval);
-}
-
-function runRandomAllocation() {
-    console.log('Running random allocation...');
-    const unsoldPlayers = auctionPlayers.filter(p => !p.sold);
-    const activeUsers = players.filter(u => u.connected && u.team.length < TOTAL_SLOTS && u.budget >= 10);
-
-    unsoldPlayers.forEach(player => {
-        shuffleArray(activeUsers);
-        for (let user of activeUsers) {
-            if (user.budget >= 10 && user.positions[player.position] < MAX_POSITIONS[player.position]) {
-                user.budget -= 10;
-                user.team.push({ name: player.name, position: player.position, price: 10 });
-                user.positions[player.position]++;
-                player.sold = true;
-                player.winner = user.name;
-                player.price = 10;
-                break;
-            }
-        }
-    });
-}
-
-// Timer loop
-timerInterval = setInterval(() => {
-    const now = Date.now();
-    if (gameStatus === 'active') {
-        if (now >= timerEnd) {
-            const player = auctionPlayers[currentPlayerIndex];
-            if (currentBidder) {
-                const winner = players.find(p => p.name === currentBidder);
-                winner.budget -= currentBid;
-                winner.team.push({ name: player.name, position: player.position, price: currentBid });
-                winner.positions[player.position]++;
-                player.sold = true;
-                player.winner = currentBidder;
-                player.price = currentBid;
-                io.emit('notification', { type: 'success', message: `${player.name} SOLD to ${currentBidder} for ${formatMoney(currentBid)}!` });
-                nextPlayer();
-            } else {
-                player.sold = false;
-                io.emit('notification', { type: 'info', message: `${player.name} unsold.` });
-                nextPlayer();
-            }
-        }
-
-        // Dismissal logic for admin
-        const admin = players.find(p => p.isAdmin && p.connected);
-        if (admin) {
-            const showDismiss = !hasReceivedBid && (timerEnd - now) <= 5000 && (timerEnd - now) > 0;
-            io.to(admin.id).emit('showDismissButton', showDismiss);
-        }
-    }
-
-    // Admin inactivity check
-    const admin = players.find(p => p.isAdmin && p.connected);
-    if (admin && gameStatus === 'active') {
-        const inactiveTime = now - lastAdminAction;
-        if (inactiveTime > 360000) { // 6 mins (5m + 1m grace)
-            const nextAdmin = players
-                .filter(p => !p.isAdmin && p.connected)
-                .sort((a, b) => a.joinedAt - b.joinedAt)[0];
-
-            if (nextAdmin) {
-                admin.isAdmin = false;
-                nextAdmin.isAdmin = true;
-                lastAdminAction = Date.now();
-                adminInactivityWarningSent = false;
-                io.emit('notification', { type: 'warning', message: `👑 ${nextAdmin.name} is now admin due to previous admin inactivity` });
-                io.emit('playerList', players.filter(p => p.connected).map(p => ({ name: p.name, isAdmin: p.isAdmin })));
-                broadcastState();
-            }
-        } else if (inactiveTime > 300000 && !adminInactivityWarningSent) { // 5 mins
-            adminInactivityWarningSent = true;
-            io.to(admin.id).emit('adminInactivityWarning');
-        }
+  try {
+    let user = await User.findOne({ nameLower: finalName.toLowerCase() });
+    if (!user) {
+      user = new User({ name: finalName, nameLower: finalName.toLowerCase(), isMainAppAdmin });
     } else {
-        adminInactivityWarningSent = false;
+      if (isMainAppAdmin) user.isMainAppAdmin = true;
     }
-}, 1000);
+    user.lastSeen = Date.now();
+    await user.save();
 
-// Cleanup task for abandoned players (5 min)
-setInterval(() => {
-    const now = Date.now();
-    if (gameStatus === 'lobby') {
-        players = players.filter(p => p.connected || (now - p.lastSeen) < 30000); // 30s grace for lobby transitions
+    req.session.userId = user._id;
+    req.session.name = user.name;
+    req.session.isMainAppAdmin = user.isMainAppAdmin;
+
+    await new Log({ userId: user._id, userName: user.name, action: 'login' }).save();
+
+    res.json({ user: { id: user._id, name: user.name, isAdmin: user.isMainAppAdmin } });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error during login.' });
+  }
+});
+
+app.post('/api/login/auction', async (req, res) => {
+  let { name, password } = req.body;
+  const nameLower = name.trim().toLowerCase();
+  let isAuctionAdmin = false;
+  if (nameLower.endsWith('admin')) {
+    if (password !== process.env.AUCTION_ADMIN_PASSWORD) {
+      return res.status(401).json({ error: 'Invalid auction password.' });
     }
-}, 30000);
+    isAuctionAdmin = true;
+  }
+  if (req.session.userId) {
+    req.session.isAuctionAdmin = isAuctionAdmin;
+    await User.findByIdAndUpdate(req.session.userId, { isAuctionAdmin });
+    res.json({ user: { isAuctionAdmin } });
+  } else res.status(401).json({ error: 'Session expired.' });
+});
 
-function formatMoney(amount) {
-    if (amount < 100) return `₹${amount} Lakh`;
-    return `₹${(amount / 100).toFixed(2)} Crore`;
-}
+app.post('/api/logout', (req, res) => {
+    req.session.destroy();
+    res.json({ success: true });
+});
 
+// Stats and Admin
+const adminCheck = (req, res, next) => {
+  if (req.session.isMainAppAdmin) next();
+  else res.status(403).json({ error: 'Unauthorized' });
+};
+
+app.get('/api/admin/users', adminCheck, async (req, res) => {
+  res.json(await User.find({}));
+});
+
+app.get('/api/admin/logs', adminCheck, async (req, res) => {
+  res.json(await Log.find({}).sort({ timestamp: -1 }).limit(100));
+});
+
+app.get('/api/admin/stats', adminCheck, async (req, res) => {
+  res.json({
+    userCount: await User.countDocuments(),
+    animeCount: await Anime.countDocuments(),
+    uptime: Math.floor((Date.now() - startTime) / 1000),
+    connections: io.sockets.sockets.size
+  });
+});
+
+app.post('/api/admin/users/:id/ban', adminCheck, async (req, res) => {
+  const user = await User.findByIdAndUpdate(req.params.id, { banned: true });
+  await new BannedName({ name: user.name, nameLower: user.nameLower, bannedBy: req.session.name }).save();
+  res.json({ success: true });
+});
+
+// Anime
+app.get('/api/anime', async (req, res) => {
+  res.json(await Anime.find({}, 'title posterUrl type jikanId'));
+});
+
+app.get('/api/anime/:id', async (req, res) => {
+  res.json(await Anime.findOne({ jikanId: req.params.id }));
+});
+
+app.get('/api/stream/:fileId', async (req, res) => {
+  const { fileId } = req.params;
+  try {
+    const fileRes = await axios.get(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
+    const filePath = fileRes.data.result.file_path;
+    const url = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${filePath}`;
+    const range = req.headers.range;
+    const response = await axios({ url, method: 'GET', responseType: 'stream', headers: range ? { Range: range } : {} });
+    if (range) { res.status(206); res.set(response.headers); }
+    else { res.set({ 'Content-Type': 'video/mp4', 'Content-Length': response.headers['content-length'] }); }
+    response.data.pipe(res);
+  } catch (error) { res.status(500).send('Stream error'); }
+});
+
+// Presence
+const onlineUsers = new Map();
 io.on('connection', (socket) => {
-    console.log('New connection:', socket.id);
-    socket.on('join', ({ name, password, token }) => {
-        console.log('Join request:', name, token, socket.id);
-
-        if (name && name.toLowerCase() === 'clearall') {
-            console.log('CLEAR ALL command received. Wiping state.');
-            players = [];
-            auctionPlayers = [];
-            gameStatus = 'lobby';
-            currentPlayerIndex = -1;
-            currentBid = 5;
-            currentBidder = null;
-            io.emit('lobbyReset', 'System reset by administrator. All sessions cleared.');
-            return;
-        }
-
-        let user;
-        if (token) {
-            user = players.find(p => p.token === token);
-        }
-
-        let cleanName = '';
-        if (name) {
-            cleanName = name.trim();
-            if (cleanName.toLowerCase().endsWith('admin')) {
-                cleanName = cleanName.slice(0, -5).trim();
-            }
-            cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-        }
-
-        if (!user && cleanName) {
-            // Allow re-joining by name if not connected
-            user = players.find(p => p.name === cleanName && !p.connected);
-        }
-
-        if (user) {
-            // Reconnecting existing user
-            user.id = socket.id;
-            user.connected = true;
-            user.lastSeen = Date.now();
-            if (user.isAdmin && adminDisconnectTimer) {
-                clearTimeout(adminDisconnectTimer);
-                adminDisconnectTimer = null;
-                io.emit('notification', { type: 'success', message: 'Admin has returned. Auction continuing normally.' });
-            }
-            console.log(`User ${user.name} reconnected. Admin: ${user.isAdmin}`);
-        } else {
-            // New join
-            if (!name || name.trim().length < 2 || name.trim().length > 20 || !/^[a-zA-Z\s]+$/.test(name)) {
-                return socket.emit('error', 'Invalid name. 2-20 characters, letters and spaces only.');
-            }
-
-            let isAdmin = false;
-            let actualCleanName = name.trim();
-
-            if (actualCleanName.toLowerCase().endsWith('admin')) {
-                if (password !== ADMIN_PASSWORD) {
-                    return socket.emit('error', 'Invalid admin password');
-                }
-                if (players.some(p => p.isAdmin && p.connected)) {
-                    return socket.emit('error', 'Admin already exists');
-                }
-                actualCleanName = actualCleanName.slice(0, -5).trim();
-                actualCleanName = actualCleanName.charAt(0).toUpperCase() + actualCleanName.slice(1);
-                isAdmin = true;
-            } else {
-                actualCleanName = actualCleanName.charAt(0).toUpperCase() + actualCleanName.slice(1);
-            }
-
-            if (players.some(p => p.name === actualCleanName && p.connected)) {
-                return socket.emit('error', 'Name already taken');
-            }
-
-            const newToken = Math.random().toString(36).substr(2, 9);
-            user = {
-                id: socket.id,
-                token: newToken,
-                name: actualCleanName,
-                isAdmin,
-                connected: true,
-                lastSeen: Date.now(),
-                joinedAt: Date.now(),
-                team: [],
-                budget: STARTING_BUDGET,
-                positions: { GK: 0, DEF: 0, MID: 0, FWD: 0 }
-            };
-            players.push(user);
-            console.log(`User ${actualCleanName} joined. Admin: ${isAdmin}`);
-        }
-
-        socket.emit('joined', { user, gameStatus });
-
-        // Broadcast updated player list to everyone
-        const connectedPlayers = players.filter(p => p.connected).map(p => ({
-            name: p.name,
-            isAdmin: p.isAdmin
-        }));
-        io.emit('playerList', connectedPlayers);
-
-        if (gameStatus !== 'lobby') {
-            broadcastState();
-        }
-    });
-
-    socket.on('startAuction', () => {
-        const user = players.find(p => p.id === socket.id);
-        if (user && user.isAdmin && players.filter(p => p.connected).length >= MIN_PLAYERS_TO_START && gameStatus === 'lobby') {
-            initializeAuction();
-            gameStatus = 'active';
-            resetAuctionTimer();
-            lastAdminAction = Date.now();
-            io.emit('auctionStarted');
-        }
-    });
-
-    socket.on('resetLobby', () => {
-        const user = players.find(p => p.id === socket.id);
-        if (user && user.isAdmin) {
-            players = [];
-            auctionPlayers = [];
-            gameStatus = 'lobby';
-            currentPlayerIndex = -1;
-            lastAdminAction = Date.now();
-            io.emit('lobbyReset', 'Lobby reset by admin. Please rejoin.');
-        }
-    });
-
-    socket.on('leaveLobby', () => {
-        const index = players.findIndex(p => p.id === socket.id);
-        if (index !== -1) {
-            const userName = players[index].name;
-            players.splice(index, 1);
-            console.log(`User ${userName} explicitly left the lobby.`);
-            io.emit('playerList', players.filter(p => p.connected).map(p => ({ name: p.name, isAdmin: p.isAdmin })));
-        }
-    });
-
-    socket.on('placeBid', (amount) => {
-        const user = players.find(p => p.id === socket.id);
-        if (!user || gameStatus !== 'active' || amount % 5 !== 0 || amount <= currentBid) return;
-        if (user.name === currentBidder) return;
-        if (user.positions[auctionPlayers[currentPlayerIndex].position] >= MAX_POSITIONS[auctionPlayers[currentPlayerIndex].position]) return;
-
-        const emptySlots = TOTAL_SLOTS - user.team.length;
-        if (user.budget - amount < emptySlots * 10) return;
-
-        currentBid = amount;
-        currentBidder = user.name;
-        hasReceivedBid = true;
-        timerEnd = Date.now() + 10000;
-        pauseRemaining = 10000;
-        broadcastState();
-        io.emit('notification', { type: 'bid', message: `${user.name} bid ${formatMoney(amount)}!` });
-    });
-
-    socket.on('pauseAuction', () => {
-        const user = players.find(p => p.id === socket.id);
-        if (user && user.isAdmin) {
-            if (gameStatus === 'active') {
-                gameStatus = 'paused';
-                pauseRemaining = Math.max(0, timerEnd - Date.now());
-            } else if (gameStatus === 'paused') {
-                gameStatus = 'active';
-                timerEnd = Date.now() + pauseRemaining;
-            }
-            lastAdminAction = Date.now();
-            broadcastState();
-        }
-    });
-
-    socket.on('dismissPlayer', () => {
-        const user = players.find(p => p.id === socket.id);
-        if (user && user.isAdmin && !hasReceivedBid && (timerEnd - Date.now()) <= 5000) {
-            auctionPlayers[currentPlayerIndex].sold = false;
-            nextPlayer();
-            lastAdminAction = Date.now();
-        }
-    });
-
-    socket.on('emergencyEnd', (confirm) => {
-        const user = players.find(p => p.id === socket.id);
-        if (user && user.isAdmin && confirm === 'END') {
-            endAuction('emergency');
-            lastAdminAction = Date.now();
-        }
-    });
-
-    socket.on('adminStayActive', () => {
-        const user = players.find(p => p.id === socket.id);
-        if (user && user.isAdmin) {
-            lastAdminAction = Date.now();
-            adminInactivityWarningSent = false;
-        }
-    });
-
-    socket.on('disconnect', () => {
-        const user = players.find(p => p.id === socket.id);
-        if (user) {
-            console.log('User disconnected:', user.name);
-            user.connected = false;
-            user.lastSeen = Date.now();
-
-            if (user.isAdmin && gameStatus === 'active') {
-                io.emit('notification', { type: 'warning', message: 'Admin disconnected! Auto-end in 60s if not returned.' });
-                adminDisconnectTimer = setTimeout(() => {
-                    if (!user.connected) endAuction('emergency');
-                }, 60000);
-            }
-
-            io.emit('playerList', players.filter(p => p.connected).map(p => ({ name: p.name, isAdmin: p.isAdmin })));
-        }
-    });
+  const session = socket.request.session;
+  if (!session || !session.userId) return;
+  const user = { name: session.name, isAdmin: session.isMainAppAdmin };
+  onlineUsers.set(socket.id, user);
+  io.emit('online-users', Array.from(onlineUsers.values()));
+  socket.on('disconnect', () => {
+    onlineUsers.delete(socket.id);
+    io.emit('online-users', Array.from(onlineUsers.values()));
+  });
 });
 
 const PORT = process.env.PORT || 3000;

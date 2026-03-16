@@ -3,55 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mejores Amigos - Auction Game</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <title>Mejores Amigos - Friends Community</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-void: #0a0a0f;
+            --bg-base: #0f0f18;
+            --accent-gold: #f5b942;
+            --text-primary: #f0eff8;
+            --text-secondary: #9896aa;
+            --border-subtle: rgba(255,255,255,0.06);
+            --radius-md: 14px;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--bg-void);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .login-container {
+            background: var(--bg-base);
+            border: 1px solid var(--border-subtle);
+            padding: 48px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            display: block;
+        }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            margin-bottom: 32px;
+            letter-spacing: -0.02em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            background: #16161f;
+            border: 1px solid var(--border-subtle);
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            color: white;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--accent-gold);
+        }
+
+        #password-group {
+            display: none;
+        }
+
+        .btn-join {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-gold), #e8890c);
+            color: #0a0a0f;
+            border: none;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-join:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245,185,66,0.3);
+        }
+
+        .error-msg {
+            color: #f87171;
+            font-size: 13px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .links {
+            margin-top: 32px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .links a:hover {
+            color: var(--accent-gold);
+        }
+    </style>
 </head>
-<body class="landing-page">
-    <div class="container">
-        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O27UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo">
-        <h1>MEJORES AMIGOS</h1>
-        <p style="margin-bottom: 2rem; opacity: 0.8; letter-spacing: 1px;">FANTASY FOOTBALL AUCTION</p>
-        <div class="join-form">
-            <input type="text" id="nameInput" placeholder="Enter Your Name">
-            <div id="adminPasswordField" style="display: none;">
-                <input type="password" id="passwordInput" placeholder="Admin Password">
+<body>
+    <div class="login-container">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo">
+        <h1>Mejores Amigos</h1>
+
+        <form id="login-form">
+            <div class="input-group">
+                <label for="username">Enter your name</label>
+                <input type="text" id="username" placeholder="e.g. Ishan" required autocomplete="off">
             </div>
-            <button id="joinBtn">JOIN AUCTION</button>
-            <p id="errorMessage" class="error"></p>
-        </div>
-        <div class="footer-links">
-            <a href="/about.html">ABOUT</a>
-            <a href="/help.html">HELP</a>
+
+            <div class="input-group" id="password-group">
+                <label for="password">Admin Password</label>
+                <input type="password" id="password" placeholder="Devadutt@2011">
+            </div>
+
+            <button type="submit" class="btn-join">JOIN COMMUNITY</button>
+            <div id="error-msg" class="error-msg"></div>
+        </form>
+
+        <div class="links">
+            <a href="#">About</a>
+            <a href="#">Help</a>
         </div>
     </div>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/main.js"></script>
+
     <script>
-        const nameInput = document.getElementById('nameInput');
-        const adminField = document.getElementById('adminPasswordField');
-        const joinBtn = document.getElementById('joinBtn');
-        const errorMsg = document.getElementById('errorMessage');
+        const usernameInput = document.getElementById('username');
+        const passwordGroup = document.getElementById('password-group');
+        const loginForm = document.getElementById('login-form');
+        const errorMsg = document.getElementById('error-msg');
 
-        nameInput.addEventListener('input', () => {
-            if (nameInput.value.toLowerCase().endsWith('admin')) {
-                adminField.style.display = 'block';
+        usernameInput.addEventListener('input', () => {
+            if (usernameInput.value.toLowerCase().endsWith('admin')) {
+                passwordGroup.style.display = 'block';
             } else {
-                adminField.style.display = 'none';
+                passwordGroup.style.display = 'none';
             }
         });
 
-        joinBtn.addEventListener('click', () => {
-            const name = nameInput.value;
-            const password = document.getElementById('passwordInput').value;
-            localStorage.removeItem('playerToken'); // Clear old token on manual join
-            localStorage.setItem('playerName', name);
-            if (name.toLowerCase().endsWith('admin')) {
-                socket.emit('join', { name, password });
-            } else {
-                socket.emit('join', { name });
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMsg.style.display = 'none';
+
+            const name = usernameInput.value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('mejoresAmigosUser', JSON.stringify(data.user));
+                    window.location.href = '/hub.html';
+                } else {
+                    errorMsg.textContent = data.error;
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                errorMsg.textContent = "Connection error. Try again.";
+                errorMsg.style.display = 'block';
             }
         });
+
+        // Auto-login check
+        window.onload = () => {
+            const storedUser = localStorage.getItem('mejoresAmigosUser');
+            if (storedUser) {
+                window.location.href = '/hub.html';
+            }
+        };
     </script>
 </body>
 </html>
-<div id="toastContainer"></div>

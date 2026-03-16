@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Auction Lobby</title>
+    <style>
+        body { background: #0a0a0f; color: white; font-family: 'DM Sans', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        .container { background: #0f0f18; padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .player-list { margin: 20px 0; }
+        .btn { background: #4ade80; color: #0a0a0f; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn:disabled { background: #222; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Auction Lobby</h1>
+        <div id="status">Waiting for players...</div>
+        <div class="player-list" id="player-list"></div>
+        <button id="start-btn" class="btn" disabled>START AUCTION</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io('/auction');
+        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+
+        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAdmin });
+
+        socket.on('stateUpdate', (state) => {
+            const list = document.getElementById('player-list');
+            list.innerHTML = state.players.map(p => `<div>${p.isAdmin ? '👑 ' : ''}${p.name}</div>`).join('');
+
+            const startBtn = document.getElementById('start-btn');
+            if (user.isAdmin) {
+                startBtn.style.display = 'block';
+                if (state.players.length >= 1) { // Reduced for testing, should be 4
+                    startBtn.disabled = false;
+                }
+            } else {
+                startBtn.style.display = 'none';
+            }
+
+            if (state.gameStatus === 'active') {
+                window.location.href = '/auction/index.html';
+            }
+        });
+
+        document.getElementById('start-btn').onclick = () => socket.emit('startAuction');
+    </script>
+</body>
+</html>

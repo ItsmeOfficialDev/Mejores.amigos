@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Auction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root { --bg: #0a0a0f; --surf: #0f0f18; --acc: #f5b942; --text: #f0eff8; --border: rgba(255,255,255,0.06); }
+        body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; margin: 0; padding: 20px; }
+        .card { max-width: 500px; margin: 40px auto; background: var(--surf); padding: 40px; border-radius: 24px; border: 1px solid var(--border); text-align: center; position: relative; }
+        .pos { background: #1d1d2a; padding: 6px 16px; border-radius: 99px; display: inline-block; font-size: 12px; font-weight: bold; margin-bottom: 15px; }
+        .name { font-family: 'Syne'; font-size: 42px; font-weight: 800; margin-bottom: 10px; }
+        .bid { font-family: 'Syne'; font-size: 54px; color: var(--acc); margin: 20px 0; }
+        .timer { font-size: 32px; color: #f87171; font-weight: bold; margin-bottom: 30px; }
+        .btn-bid { width: 100%; background: #4ade80; color: #0a0a0f; border: none; padding: 20px; border-radius: 16px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-bid:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(74,222,128,0.3); }
+        .admin-panel { position: fixed; bottom: 20px; right: 20px; background: #0f0f18; border: 1px solid var(--acc); padding: 15px; border-radius: 16px; display: none; }
+        .btn-admin { padding: 10px 15px; border-radius: 8px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; margin-left: 10px; }
+        .btn-dismiss { background: #f87171; color: white; }
+        .btn-end { background: #4e4d60; color: white; }
+        #highest { margin-top: 10px; font-size: 14px; color: #9896aa; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="pos" id="pos">GK</div>
+        <div class="name" id="name">Connecting...</div>
+        <div class="bid" id="bid">₹5 Lakh</div>
+        <div id="highest">Waiting for bids...</div>
+        <div class="timer" id="timer">10s</div>
+        <button class="btn-bid" id="bid-btn">BID +₹5 LAKH</button>
+    </div>
+
+    <div class="admin-panel" id="admin-panel">
+        <span style="color:var(--acc); font-size:12px; font-weight:bold;">ADMIN 👑</span>
+        <button class="btn-admin btn-dismiss" id="dismiss-btn">DISMISS</button>
+        <button class="btn-admin btn-end" id="end-btn">EMERGENCY END</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io('/auction');
+        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+
+        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
+
+        if (user.isAuctionAdmin) {
+            document.getElementById('admin-panel').style.display = 'block';
+        }
+
+        socket.on('stateUpdate', (state) => {
+            if (state.gameStatus === 'finished') {
+                location.href = '/auction/results.html';
+                return;
+            }
+            if (!state.currentPlayer) return;
+
+            document.getElementById('name').textContent = state.currentPlayer.name;
+            document.getElementById('pos').textContent = state.currentPlayer.position;
+            document.getElementById('bid').textContent = formatMoney(state.currentBid);
+            document.getElementById('highest').textContent = state.currentBidder ? `Highest Bidder: ${state.currentBidder}` : 'No bids yet';
+
+            const nextBid = state.currentBid + 5;
+            const bidBtn = document.getElementById('bid-btn');
+            bidBtn.textContent = `BID ${formatMoney(nextBid)}`;
+            bidBtn.onclick = () => socket.emit('bid', nextBid);
+
+            // Disable bid if already highest
+            bidBtn.disabled = (state.currentBidder === user.name);
+            bidBtn.style.opacity = bidBtn.disabled ? '0.5' : '1';
+
+            updateTimer(state.timerEnd);
+        });
+
+        function formatMoney(amount) {
+            if (amount < 100) return `₹${amount} Lakh`;
+            return `₹${(amount / 100).toFixed(2)} Crore`;
+        }
+
+        function updateTimer(end) {
+            if (window.timerInt) clearInterval(window.timerInt);
+            window.timerInt = setInterval(() => {
+                const remaining = Math.max(0, Math.floor((end - Date.now()) / 1000));
+                document.getElementById('timer').textContent = remaining + 's';
+                if (remaining === 0) clearInterval(window.timerInt);
+            }, 1000);
+        }
+
+        document.getElementById('dismiss-btn').onclick = () => {
+            if (confirm('Dismiss this player as unsold?')) socket.emit('dismiss');
+        };
+
+        document.getElementById('end-btn').onclick = () => {
+            const val = prompt('Type "END" to trigger emergency end and random allocation:');
+            if (val === 'END') socket.emit('emergencyEnd', 'END');
+        };
+    </script>
+</body>
+</html>

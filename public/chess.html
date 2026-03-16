@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mejores Amigos — Chess</title>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <style>
+        body { background: #0a0a0f; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        #myBoard { width: 400px; margin: 20px; }
+        .info { margin-bottom: 20px; font-size: 18px; }
+        .btn-back { background: #1d1d2a; color: white; border: 1px solid rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 8px; cursor: pointer; text-decoration: none; position: absolute; top: 20px; left: 20px; }
+    </style>
+</head>
+<body>
+    <a href="/hub.html" class="btn-back">Back to Hub</a>
+    <div class="info" id="status">Waiting for opponent...</div>
+    <div id="myBoard"></div>
+    <div class="info" id="players">White: ... | Black: ...</div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io('/chess');
+        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+        const gameId = 'global-game'; // Simplified for demo
+        let board = null;
+        let game = new Chess();
+        let myColor = 'w';
+
+        function onDragStart (source, piece, position, orientation) {
+            if (game.game_over()) return false;
+            if ((myColor === 'w' && piece.search(/^b/) !== -1) ||
+                (myColor === 'b' && piece.search(/^w/) !== -1)) {
+                return false;
+            }
+        }
+
+        function onDrop (source, target) {
+            let move = game.move({ from: source, to: target, promotion: 'q' });
+            if (move === null) return 'snapback';
+            socket.emit('move', { gameId, move });
+        }
+
+        function onSnapEnd () { board.position(game.fen()); }
+
+        socket.emit('joinGame', { gameId, player: user.name });
+
+        socket.on('gameState', (data) => {
+            game.load(data.fen);
+            myColor = data.white === user.name ? 'w' : 'b';
+            board = ChessBoard('myBoard', {
+                draggable: true,
+                position: data.fen,
+                orientation: myColor === 'w' ? 'white' : 'black',
+                onDragStart: onDragStart,
+                onDrop: onDrop,
+                onSnapEnd: onSnapEnd
+            });
+            document.getElementById('players').textContent = `White: ${data.white || '...'} | Black: ${data.black || '...'}`;
+            updateStatus();
+        });
+
+        socket.on('moveMade', (data) => {
+            game.move(data.move);
+            board.position(game.fen());
+            updateStatus();
+        });
+
+        socket.on('playerJoined', (data) => {
+            document.getElementById('players').textContent = `White: ${data.white || '...'} | Black: ${data.black || '...'}`;
+        });
+
+        function updateStatus() {
+            let status = '';
+            let moveColor = game.turn() === 'w' ? 'White' : 'Black';
+            if (game.in_checkmate()) status = 'Game over, ' + moveColor + ' is in checkmate.';
+            else if (game.in_draw()) status = 'Game over, drawn position';
+            else {
+                status = moveColor + ' to move';
+                if (game.in_check()) status += ', ' + moveColor + ' is in check';
+            }
+            document.getElementById('status').textContent = status;
+        }
+    </script>
+</body>
+</html>
