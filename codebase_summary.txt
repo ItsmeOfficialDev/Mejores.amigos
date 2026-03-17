@@ -1,0 +1,926 @@
+require('dotenv').config();
+const startTime = Date.now();
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const mongoose = require('mongoose');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const cookieParser = require('cookie-parser');
+const path = require('path');
+const axios = require('axios');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*" },
+  transports: ['websocket', 'polling']
+});
+
+// Models
+const User = require('./models/User');
+const Anime = require('./models/Anime');
+const Game = require('./models/Game');
+const BannedName = require('./models/BannedName');
+
+// DB Connection
+if (process.env.MONGODB_URI) {
+    mongoose.connect(process.env.MONGODB_URI)
+      .then(() => console.log('Connected to MongoDB'))
+      .catch(err => console.error('DB Error:', err));
+}
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+const sessionOptions = {
+  secret: process.env.SESSION_SECRET || 'mejores-ultra-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 30 * 24 * 60 * 60 * 1000
+  }
+};
+
+if (process.env.MONGODB_URI) {
+    sessionOptions.store = MongoStore.create({ mongoUrl: process.env.MONGODB_URI });
+}
+
+const sessionMiddleware = session(sessionOptions);
+app.use(sessionMiddleware);
+io.engine.use(sessionMiddleware);
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+// --- AUTH & LOGIN ---
+app.post('/api/login', async (req, res) => {
+  const { name, password, profilePic } = req.body;
+  const ip = req.ip;
+  const nameLower = name ? name.trim().toLowerCase() : '';
+
+  if (nameLower === 'clearall') {
+    if (process.env.MONGODB_URI) {
+        await User.deleteMany({});
+        await Game.deleteMany({});
+    }
+    return res.json({ success: true, message: 'System wiped' });
+  }
+
+  try {
+    let isMainAdmin = false;
+    let finalName = name.trim();
+
+    if (nameLower === 'admin' || nameLower.endsWith('admin')) {
+      if (password === 'Devadutt@2011') {
+          isMainAdmin = true;
+          finalName = (nameLower === 'admin') ? 'Admin' : finalName.slice(0, -5).trim();
+      } else {
+          return res.status(401).json({ error: 'Wrong Admin password' });
+      }
+    }
+
+    finalName = finalName.charAt(0).toUpperCase() + finalName.slice(1);
+
+    let user = null;
+    if (process.env.MONGODB_URI) {
+        user = await User.findOne({ nameLower: finalName.toLowerCase() });
+        if (!user) {
+          user = new User({
+            name: finalName,
+            nameLower: finalName.toLowerCase(),
+            isMainAppAdmin: isMainAdmin, isAuctionAdmin: isMainAdmin,
+            profilePic: profilePic || 'https://ui-avatars.com/api/?background=random&name=' + finalName,
+            ips: [ip]
+          });
+        } else {
+          if (isMainAdmin) user.isMainAppAdmin = true;
+          if (!user.ips.includes(ip)) user.ips.push(ip);
+          if (profilePic) user.profilePic = profilePic;
+        }
+        await user.save();
+        req.session.userId = user._id;
+    } else {
+        req.session.userId = 'temp-id';
+    }
+
+    req.session.name = finalName;
+    req.session.isMainAppAdmin = isMainAdmin;
+
+    res.json({ user: { name: finalName, isAuctionAdmin: isMainAdmin, isAdmin: isMainAdmin } });
+  } catch (err) {
+    res.status(500).json({ error: 'Auth failed' });
+  }
+});
+
+app.get('/api/me', async (req, res) => {
+    if (req.session.name) {
+        return res.json({ user: { name: req.session.name, isAuctionAdmin: req.session.isMainAppAdmin, isAdmin: req.session.isMainAppAdmin } });
+    }
+    res.status(404).json({ error: 'No session' });
+});
+
+app.post('/api/logout', (req, res) => {
+  req.session.destroy();
+  res.json({ success: true });
+});
+
+// --- AUCTION ROUTES ---
+app.get('/auction/lobby', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/auction/lobby.html'));
+});
+app.get('/auction/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/auction/index.html'));
+});
+app.get('/auction/results.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/auction/results.html'));
+});
+
+// --- ADMIN API ---
+const adminCheck = (req, res, next) => {
+  if (req.session.isMainAppAdmin) next();
+  else res.status(403).json({ error: 'Unauthorized' });
+};
+
+app.get('/api/admin/stats', adminCheck, async (req, res) => {
+  res.json({
+    userCount: process.env.MONGODB_URI ? await User.countDocuments() : 0,
+    animeCount: process.env.MONGODB_URI ? await Anime.countDocuments() : 0,
+    uptime: Math.floor((Date.now() - startTime) / 1000),
+    connections: io.sockets.sockets.size
+  });
+});
+
+// --- ANIME API (ani-cli logic) ---
+app.get('/api/anime', async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.json([{ title: 'Sample Anime', jikanId: 1, posterUrl: 'https://via.placeholder.com/200' }]);
+    res.json(await Anime.find({}, 'title posterUrl jikanId'));
+});
+
+app.get('/api/anime/:id', async (req, res) => {
+    if (!process.env.MONGODB_URI) return res.json({ title: 'Sample', synopsis: 'Demo' });
+    res.json(await Anime.findOne({ jikanId: req.params.id }));
+});
+
+app.get('/api/stream/resolve', async (req, res) => {
+    const { title, ep } = req.query;
+    // Mock resolution mimicking ani-cli scraping
+    res.json({
+        url: "https://www.w3schools.com/html/mov_bbb.mp4",
+        qualities: ['1080p', '720p', '480p']
+    });
+});
+
+// --- SOCKET MODULES ---
+require('./socket/chess')(io);
+require('./socket/tictactoe')(io);
+require('./socket/auction')(io);
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+
+module.exports = { app, server, io };
+const PLAYER_LIST = [
+    { name: "Emiliano Martinez", position: "GK" }, { name: "Victor Valdes", position: "GK" },
+    { name: "Manuel Neuer", position: "GK" }, { name: "Ter Stegen", position: "GK" },
+    { name: "Oliver Kahn", position: "GK" }, { name: "Thibaut Courtois", position: "GK" },
+    { name: "Dida", position: "GK" }, { name: "Gigi Donnarumma", position: "GK" },
+    { name: "Gigi Buffon", position: "GK" }, { name: "Allison Becker", position: "GK" },
+    { name: "Ederson", position: "GK" }, { name: "David De Gea", position: "GK" },
+    { name: "Van Der Sar", position: "GK" }, { name: "David Raya", position: "GK" },
+    { name: "Iker Casillas", position: "GK" }, { name: "Sommer", position: "GK" },
+    { name: "Yasin Bonou", position: "GK" }, { name: "Livakovich", position: "GK" },
+    { name: "Hugo Loris", position: "GK" }, { name: "Mike Maignan", position: "GK" },
+    { name: "Lev Yashin", position: "GK" }, { name: "Peter Schemichel", position: "GK" },
+    { name: "Dinor Zoff", position: "GK" }, { name: "Peter Cech", position: "GK" },
+    { name: "Jan Oblak", position: "GK" }, { name: "Gregor Kobel", position: "GK" },
+    { name: "Unai Simon", position: "GK" }, { name: "Jordan Pickford", position: "GK" },
+    { name: "Schzency", position: "GK" }, { name: "Diago Costa", position: "GK" },
+    { name: "Andre Onana", position: "GK" }, { name: "Kepa", position: "GK" },
+    { name: "Lenin", position: "GK" }, { name: "Robert Sanchez", position: "GK" },
+    { name: "Sachin Suresh", position: "GK" }, { name: "Gordon Banks", position: "GK" },
+
+    { name: "Harry Maguire", position: "DEF" }, { name: "John Stones", position: "DEF" },
+    { name: "Kyle Walker", position: "DEF" }, { name: "Luke Shaw", position: "DEF" },
+    { name: "Ashley Cole", position: "DEF" }, { name: "Trent Alexander Arnold", position: "DEF" },
+    { name: "Carlos Alberto", position: "DEF" }, { name: "Roberto Carlos", position: "DEF" },
+    { name: "Cafu", position: "DEF" }, { name: "Marquinhos", position: "DEF" },
+    { name: "Saliba", position: "DEF" }, { name: "Thiago Hernandez", position: "DEF" },
+    { name: "Raphael Varane", position: "DEF" }, { name: "Upamecano", position: "DEF" },
+    { name: "Joules Kounde", position: "DEF" }, { name: "Thuram", position: "DEF" },
+    { name: "Marscel Dessaily", position: "DEF" }, { name: "Carlos Puyol", position: "DEF" },
+    { name: "Jordi Alba", position: "DEF" }, { name: "Gerrard Pique", position: "DEF" },
+    { name: "Sergio Ramos", position: "DEF" }, { name: "Pepe", position: "DEF" },
+    { name: "Jaoa Cancelo", position: "DEF" }, { name: "Paolo Maldini", position: "DEF" },
+    { name: "Fabio Cannavaro", position: "DEF" }, { name: "Allesandro Nesta", position: "DEF" },
+    { name: "Franco Baresi", position: "DEF" }, { name: "Giorgio Chellini", position: "DEF" },
+    { name: "Allesandro CoastCurta", position: "DEF" }, { name: "Leornado Bonnucci", position: "DEF" },
+    { name: "Virgil Vandijk", position: "DEF" }, { name: "De Ligt", position: "DEF" },
+    { name: "Christian Romero", position: "DEF" }, { name: "Franz Beckanbaur", position: "DEF" },
+    { name: "Philip Lahm", position: "DEF" }, { name: "Marcelo", position: "DEF" },
+    { name: "Dani Alves", position: "DEF" }, { name: "Stam", position: "DEF" },
+    { name: "Rio Ferdinard", position: "DEF" }, { name: "Antonine Rudigier", position: "DEF" },
+    { name: "Bobby Moor", position: "DEF" }, { name: "Thiago Silva", position: "DEF" },
+    { name: "Matt Hummels", position: "DEF" }, { name: "Allen Hansen", position: "DEF" },
+    { name: "John Terry", position: "DEF" }, { name: "Janis Zannetti", position: "DEF" },
+    { name: "Donald Koeman", position: "DEF" }, { name: "Andy Robertson", position: "DEF" },
+
+    { name: "Kroos", position: "MID" }, { name: "Modric", position: "MID" },
+    { name: "Casemeiro", position: "MID" }, { name: "Kaka", position: "MID" },
+    { name: "Guti", position: "MID" }, { name: "Griezmann", position: "MID" },
+    { name: "Iniesta", position: "MID" }, { name: "Xavi", position: "MID" },
+    { name: "Xabi", position: "MID" }, { name: "Busquets", position: "MID" },
+    { name: "Rice", position: "MID" }, { name: "Palmer", position: "MID" },
+    { name: "Kevin De Bruyne", position: "MID" }, { name: "Pogba", position: "MID" },
+    { name: "Pirlo", position: "MID" }, { name: "Piero", position: "MID" },
+    { name: "Gattuso", position: "MID" }, { name: "De Jong", position: "MID" },
+    { name: "Rakitic", position: "MID" }, { name: "Pele", position: "MID" },
+    { name: "Maradona", position: "MID" }, { name: "Ozil", position: "MID" },
+    { name: "Gavi", position: "MID" }, { name: "Pedri", position: "MID" },
+    { name: "Rodri", position: "MID" }, { name: "Bellingam", position: "MID" },
+    { name: "Beckham", position: "MID" }, { name: "Zidane", position: "MID" },
+    { name: "Mac Allister", position: "MID" }, { name: "Mashcerano", position: "MID" },
+    { name: "Mathaus", position: "MID" }, { name: "Steven Gerrard", position: "MID" },
+    { name: "Lampard", position: "MID" }, { name: "Zico", position: "MID" },
+    { name: "Baggio", position: "MID" }, { name: "Viera", position: "MID" },
+    { name: "Scholes", position: "MID" }, { name: "Kante", position: "MID" },
+    { name: "Verratti", position: "MID" }, { name: "Juninho", position: "MID" },
+    { name: "Platini", position: "MID" }, { name: "Cruyff", position: "MID" },
+    { name: "Gullit", position: "MID" }, { name: "Stefano", position: "MID" },
+    { name: "Rijkaard", position: "MID" }, { name: "Makalele", position: "MID" },
+    { name: "Socrates", position: "MID" }, { name: "Keane", position: "MID" },
+    { name: "Toure", position: "MID" }, { name: "Valverade", position: "MID" },
+    { name: "Odegaard", position: "MID" }, { name: "Muller", position: "MID" },
+    { name: "Sneijder", position: "MID" }, { name: "Deco", position: "MID" },
+    { name: "Giggs", position: "MID" }, { name: "Okocha", position: "MID" },
+
+    { name: "Raul", position: "FWD" }, { name: "Totti", position: "FWD" },
+    { name: "Sanchez", position: "FWD" }, { name: "Berkamp", position: "FWD" },
+    { name: "David Villa", position: "FWD" }, { name: "Kane", position: "FWD" },
+    { name: "Richarlison", position: "FWD" }, { name: "Mbeumo", position: "FWD" },
+    { name: "Bruno", position: "FWD" }, { name: "Rivaldo", position: "FWD" },
+    { name: "Mbappe", position: "FWD" }, { name: "Haaland", position: "FWD" },
+    { name: "Yamal", position: "FWD" }, { name: "Ronaldo Nazario", position: "FWD" },
+    { name: "Ronaldo", position: "FWD" }, { name: "Son", position: "FWD" },
+    { name: "Lewandowski", position: "FWD" }, { name: "Zlatan", position: "FWD" },
+    { name: "Ronaldinho", position: "FWD" }, { name: "Neymar", position: "FWD" },
+    { name: "Salah", position: "FWD" }, { name: "Bale", position: "FWD" },
+    { name: "Messi", position: "FWD" }, { name: "Gerd Muller", position: "FWD" },
+    { name: "Henry", position: "FWD" }, { name: "Puskas Cole", position: "FWD" },
+    { name: "Van Basten", position: "FWD" }, { name: "Romario", position: "FWD" },
+    { name: "Suarez", position: "FWD" }, { name: "Best", position: "FWD" },
+    { name: "Batistuta", position: "FWD" }, { name: "Ruminiegge", position: "FWD" },
+    { name: "Schevchenko", position: "FWD" }, { name: "Nistelrooy", position: "FWD" },
+    { name: "Eto'o", position: "FWD" }, { name: "Drogba", position: "FWD" },
+    { name: "Benzema", position: "FWD" }, { name: "Rooney", position: "FWD" },
+    { name: "Fernando Torres", position: "FWD" }, { name: "Van Persie", position: "FWD" },
+    { name: "Robben", position: "FWD" }, { name: "Ribery", position: "FWD" },
+    { name: "Owen", position: "FWD" }, { name: "Zola", position: "FWD" },
+    { name: "Hazard", position: "FWD" }, { name: "Mane", position: "FWD" },
+    { name: "Di Maria", position: "FWD" }, { name: "Inzaghi", position: "FWD" },
+    { name: "Crespo", position: "FWD" }, { name: "Sunil Chettri", position: "FWD" },
+    { name: "Siva", position: "FWD" }
+];
+
+const MAX_POS = { GK: 3, DEF: 5, MID: 5, FWD: 5 };
+
+module.exports = (io) => {
+    const ns = io.of('/auction');
+
+    let players = [];
+    let auctionQueue = [];
+    let gameStatus = 'lobby';
+    let currentIdx = -1;
+    let currentBid = 5;
+    let currentBidder = null;
+    let timerEnd = 0;
+
+    function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
+
+    function broadcast() {
+        ns.emit('stateUpdate', {
+            gameStatus,
+            currentBid,
+            currentBidder,
+            timerEnd,
+            currentPlayer: auctionQueue[currentIdx] || null,
+            players: players.map(p => ({ name: p.name, isAdmin: p.isAdmin, budget: p.budget, teamSize: p.team.length }))
+        });
+    }
+
+    ns.on('connection', (socket) => {
+        socket.on('joinAuction', ({ name, isAdmin }) => {
+            let p = players.find(x => x.name === name);
+            if (!p) {
+                p = { id: socket.id, name, isAdmin, budget: 1500, team: [], positions: { GK: 0, DEF: 0, MID: 0, FWD: 0 } };
+                players.push(p);
+            } else p.id = socket.id;
+            broadcast();
+        });
+
+        socket.on('startAuction', () => {
+            const p = players.find(x => x.id === socket.id);
+            if (p && p.isAdmin && gameStatus === 'lobby' && players.length >= 4) {
+                auctionQueue = [
+                    ...shuffle(PLAYER_LIST.filter(x => x.position === 'GK')),
+                    ...shuffle(PLAYER_LIST.filter(x => x.position === 'DEF')),
+                    ...shuffle(PLAYER_LIST.filter(x => x.position === 'MID')),
+                    ...shuffle(PLAYER_LIST.filter(x => x.position === 'FWD'))
+                ];
+                gameStatus = 'active';
+                currentIdx = 0;
+                currentBid = 5;
+                currentBidder = null;
+                timerEnd = Date.now() + 10000;
+                broadcast();
+            }
+        });
+
+        socket.on('bid', (amount) => {
+            const p = players.find(x => x.id === socket.id);
+            if (!p || gameStatus !== 'active' || amount <= currentBid || amount % 5 !== 0) return;
+            if (p.name === currentBidder) return;
+            const player = auctionQueue[currentIdx];
+            if (p.positions[player.position] >= MAX_POS[player.position]) return;
+            if (p.budget - amount < (18 - p.team.length) * 10) return;
+
+            currentBid = amount;
+            currentBidder = p.name;
+            timerEnd = Date.now() + 10000;
+            broadcast();
+        });
+
+        socket.on('dismiss', () => {
+            const p = players.find(x => x.id === socket.id);
+            if (p && p.isAdmin && gameStatus === 'active' && !currentBidder) {
+                currentIdx++;
+                if (currentIdx >= auctionQueue.length) gameStatus = 'finished';
+                else { currentBid = 5; currentBidder = null; timerEnd = Date.now() + 10000; }
+                broadcast();
+            }
+        });
+
+        socket.on('emergencyEnd', (confirm) => {
+            const p = players.find(x => x.id === socket.id);
+            if (p && p.isAdmin && confirm === 'END') {
+                const unsold = auctionQueue.slice(currentIdx);
+                for (const player of unsold) {
+                    const eligible = shuffle(players.filter(x =>
+                        x.team.length < 18 &&
+                        x.budget >= 10 &&
+                        x.positions[player.position] < MAX_POS[player.position]
+                    ));
+                    if (eligible.length > 0) {
+                        const winner = eligible[0];
+                        winner.budget -= 10;
+                        winner.team.push({ ...player, price: 10, random: true });
+                        winner.positions[player.position]++;
+                    }
+                }
+                gameStatus = 'finished';
+                broadcast();
+            }
+        });
+    });
+
+    setInterval(() => {
+        if (gameStatus === 'active' && Date.now() > timerEnd) {
+            if (currentBidder) {
+                const winner = players.find(x => x.name === currentBidder);
+                const player = auctionQueue[currentIdx];
+                winner.budget -= currentBid;
+                winner.team.push({ ...player, price: currentBid });
+                winner.positions[player.position]++;
+            }
+            currentIdx++;
+            if (currentIdx >= auctionQueue.length) gameStatus = 'finished';
+            else { currentBid = 5; currentBidder = null; timerEnd = Date.now() + 10000; }
+            broadcast();
+        }
+    }, 1000);
+};
+const { Chess } = require('chess.js');
+const Game = require('../models/Game');
+
+module.exports = (io) => {
+    const ns = io.of('/chess');
+    const activeGames = new Map(); // gameId -> { chess, white, black, timers }
+
+    ns.on('connection', (socket) => {
+        socket.on('joinGame', async ({ gameId, player }) => {
+            socket.join(gameId);
+            let g = activeGames.get(gameId);
+
+            if (!g) {
+                // Try load from DB or create new
+                g = {
+                    chess: new Chess(),
+                    white: player,
+                    black: null,
+                    timers: { w: 600, b: 600 },
+                    lastMove: Date.now()
+                };
+                activeGames.set(gameId, g);
+            } else if (!g.black && g.white !== player) {
+                g.black = player;
+            }
+
+            ns.to(gameId).emit('gameState', {
+                fen: g.chess.fen(),
+                white: g.white,
+                black: g.black,
+                turn: g.chess.turn(),
+                timers: g.timers
+            });
+        });
+
+        socket.on('move', ({ gameId, move }) => {
+            const g = activeGames.get(gameId);
+            if (!g) return;
+
+            try {
+                const result = g.chess.move(move);
+                if (result) {
+                    const now = Date.now();
+                    const diff = Math.floor((now - g.lastMove) / 1000);
+                    const turn = g.chess.turn() === 'w' ? 'b' : 'w'; // turn that just moved
+                    g.timers[turn] = Math.max(0, g.timers[turn] - diff);
+                    g.lastMove = now;
+
+                    ns.to(gameId).emit('moveMade', {
+                        move: result,
+                        fen: g.chess.fen(),
+                        turn: g.chess.turn(),
+                        timers: g.timers
+                    });
+
+                    if (g.chess.game_over()) {
+                        let res = 'Draw';
+                        if (g.chess.in_checkmate()) res = `Winner: ${g.chess.turn() === 'w' ? g.black : g.white}`;
+                        ns.to(gameId).emit('gameOver', { result: res });
+                    }
+                }
+            } catch (e) {
+                socket.emit('error', 'Invalid move');
+            }
+        });
+    });
+};
+module.exports = (io) => {
+    const ns = io.of('/tictactoe');
+    const games = new Map();
+
+    ns.on('connection', (socket) => {
+        socket.on('joinGame', ({ gameId, player }) => {
+            socket.join(gameId);
+            let g = games.get(gameId);
+            if (!g) {
+                g = { board: Array(9).fill(''), X: player, O: null, turn: 'X' };
+                games.set(gameId, g);
+            } else if (!g.O && g.X !== player) {
+                g.O = player;
+            }
+            ns.to(gameId).emit('gameState', g);
+        });
+
+        socket.on('move', ({ gameId, index, symbol }) => {
+            const g = games.get(gameId);
+            if (g && g.board[index] === '' && g.turn === symbol) {
+                g.board[index] = symbol;
+                g.turn = symbol === 'X' ? 'O' : 'X';
+                ns.to(gameId).emit('gameState', g);
+
+                // Check win
+                const winPatterns = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+                for (const p of winPatterns) {
+                    if (g.board[p[0]] && g.board[p[0]] === g.board[p[1]] && g.board[p[0]] === g.board[p[2]]) {
+                        ns.to(gameId).emit('gameOver', { winner: symbol });
+                        return;
+                    }
+                }
+                if (!g.board.includes('')) ns.to(gameId).emit('gameOver', { winner: 'Draw' });
+            }
+        });
+    });
+};
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mejores Amigos — Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+/* CSS additions for Hub */
+.section-panel { display: none; animation: fadeSlideUp 0.35s cubic-bezier(0.4,0,0.2,1); }
+.section-panel.active { display: block; }
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.nav-tab.active { background: var(--bg-elevated); color: var(--text-primary); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+.anime-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; }
+.anime-card { border-radius: var(--radius-md); overflow: hidden; cursor: pointer; transition: 0.2s; position: relative; aspect-ratio: 2/3; }
+.anime-card:hover { transform: scale(1.04); z-index: 2; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.anime-card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%); display: flex; align-items: flex-end; padding: 10px; }
+.anime-card-title { font-family: 'Syne'; font-weight: 700; font-size: 10px; color: #fff; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/hub.html" class="logo">
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo-img">
+      <span class="logo-text">Mejores<span>Amigos</span></span>
+    </a>
+    <div class="friends-bar" id="f-bar">
+      <span class="friends-label">Online:</span>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" onclick="handleLogout()" title="Logout"><i class="fa-solid fa-power-off"></i></button>
+      <div class="user-chip" onclick="location.href='/admin.html'">
+        <div class="user-av" id="u-av">??</div>
+        <span class="user-name" id="u-name">User</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="section-nav">
+  <div class="nav-tabs">
+    <button class="nav-tab tab-games active" onclick="switchT(event, 'games')">🎮 Games</button>
+    <button class="nav-tab tab-ent" onclick="switchT(event, 'ent')">🍿 Entertainment</button>
+    <button class="nav-tab tab-study" onclick="switchT(event, 'study')">📚 Study Zone</button>
+  </div>
+</div>
+
+<div class="content-area">
+  <!-- GAMES -->
+  <div id="p-games" class="section-panel active">
+    <div class="auction-card" onclick="location.href='/auction/lobby'">
+      <div class="auction-icon-big">⚽</div>
+      <div class="auction-info">
+        <div class="auction-badge">⚡ Live Lobby</div>
+        <h2>Fantasy Football Auction</h2>
+        <p style="color:var(--text-secondary); margin-bottom:20px;">Live bidding for 191 legends. Join the group now.</p>
+        <button class="btn-primary">Join Waiting Room</button>
+      </div>
+    </div>
+    <div class="games-grid">
+      <div class="game-card" onclick="location.href='/chess.html'">
+        <span class="game-card-icon">♟️</span>
+        <h3>Chess.com Clone</h3>
+        <p>Real-time battle with timers and move history.</p>
+      </div>
+      <div class="game-card" onclick="location.href='/tictactoe.html'">
+        <span class="game-card-icon">❌</span>
+        <h3>Tic Tac Toe</h3>
+        <p>Classic rounds. Invite a friend instantly.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENT -->
+  <div id="p-ent" class="section-panel">
+    <div class="ent-layout">
+      <div class="ent-sidebar">
+        <div class="search-bar"><i class="fa-solid fa-search"></i><input type="text" id="anime-search" placeholder="Search anime..."></div>
+        <div class="anime-grid" id="anime-grid"></div>
+      </div>
+      <div class="ent-main" id="video-area">
+        <div class="video-placeholder">
+          <i class="fa-regular fa-circle-play"></i>
+          <p>Select an Anime to Resolve Links</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDY -->
+  <div id="p-study" class="section-panel">
+    <div style="text-align: center; padding: 100px 0;">
+      <div style="font-size: 64px;">🚧</div>
+      <h2 style="font-family: 'Syne'; color: var(--accent-study);">Padippi Area</h2>
+      <p style="color: var(--text-secondary); max-width: 400px; margin: 20px auto;">Feature Under Development. Coming soon to Mejores Amigos Community.</p>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/player.js"></script>
+<script>
+    let me = null;
+    async function init() {
+        me = await checkAuth();
+        if (!me) location.href = '/index.html';
+        document.getElementById('u-name').textContent = me.name + (me.isMainAppAdmin ? ' 👑' : '');
+        document.getElementById('u-av').textContent = me.name.substring(0,2).toUpperCase();
+
+        const socket = io();
+        socket.on('online-users', (users) => {
+            const bar = document.getElementById('f-bar');
+            bar.innerHTML = '<span class="friends-label">Online:</span>' +
+                users.filter(u => u.name !== me.name).map(u => `
+                    <div class="friend-avatar" title="${u.name}">
+                        <div class="av-inner">${u.name.substring(0,2).toUpperCase()}</div>
+                        <span class="online-dot"></span>
+                    </div>
+                `).join('') + `<span style="font-size:12px; color:var(--text-muted); margin-left:8px">${users.length} connected</span>`;
+        });
+    }
+
+    function switchT(e, id) {
+        document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('p-' + id).classList.add('active');
+        e.currentTarget.classList.add('active');
+    }
+
+    init();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Auction Lobby — Mejores Amigos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body { background: #0a0a0f; color: white; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .lobby-box { background: #0f0f18; border: 1px solid rgba(255,255,255,0.06); padding: 50px; border-radius: 30px; width: 100%; max-width: 500px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .p-list { margin: 30px 0; display: flex; flex-direction: column; gap: 10px; }
+        .p-item { background: #16161f; padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; }
+        .btn-lobby { width: 100%; padding: 18px; border-radius: 15px; border: none; font-family: 'Syne'; font-weight: 800; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn-start { background: #4ade80; color: #000; }
+        .btn-invite { background: #f5b942; color: #000; }
+        #status-msg { font-size: 14px; color: #9896aa; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="lobby-box">
+        <h1 style="font-family:'Syne'; font-size:32px; margin-bottom:10px;">Auction Lobby</h1>
+        <div id="status-msg">Waiting for at least 4 players...</div>
+        <div class="p-list" id="player-list"></div>
+        <button class="btn-lobby btn-start" id="start-btn" style="display:none;" disabled>START AUCTION</button>
+        <button class="btn-lobby btn-invite" onclick="copyInvite()">GENERATE INVITE LINK</button>
+        <div style="margin-top:20px;"><a href="/hub.html" style="color:#9896aa; text-decoration:none; font-size:13px;">Exit to Hub</a></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+        if (!user) location.href = '/index.html';
+
+        const socket = io('/auction');
+        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
+
+        socket.on('stateUpdate', (state) => {
+            const list = document.getElementById('player-list');
+            list.innerHTML = state.players.map(p => `
+                <div class="p-item">
+                    <span>${p.isAdmin ? '👑 ' : ''}${p.name}</span>
+                    <span style="color:#4ade80">Connected</span>
+                </div>
+            `).join('');
+
+            const startBtn = document.getElementById('start-btn');
+            if (user.isAuctionAdmin) {
+                startBtn.style.display = 'block';
+                startBtn.disabled = state.players.length < 4; // Testing mode: 1
+                document.getElementById('status-msg').textContent = `Ready to start with ${state.players.length} players`;
+            }
+
+            if (state.gameStatus === 'active') location.href = '/auction/index.html';
+        });
+
+        document.getElementById('start-btn').onclick = () => socket.emit('startAuction');
+
+        function copyInvite() {
+            const url = window.location.origin + '/auction/lobby?invite=' + Math.random().toString(36).substring(7);
+            navigator.clipboard.writeText(url);
+            alert('Invite link copied!');
+        }
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live Auction</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root { --bg: #0a0a0f; --surf: #0f0f18; --acc: #f5b942; --text: #f0eff8; --border: rgba(255,255,255,0.06); }
+        body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; margin: 0; padding: 20px; }
+        .card { max-width: 500px; margin: 40px auto; background: var(--surf); padding: 40px; border-radius: 24px; border: 1px solid var(--border); text-align: center; position: relative; }
+        .pos { background: #1d1d2a; padding: 6px 16px; border-radius: 99px; display: inline-block; font-size: 12px; font-weight: bold; margin-bottom: 15px; }
+        .name { font-family: 'Syne'; font-size: 42px; font-weight: 800; margin-bottom: 10px; }
+        .bid { font-family: 'Syne'; font-size: 54px; color: var(--acc); margin: 20px 0; }
+        .timer { font-size: 32px; color: #f87171; font-weight: bold; margin-bottom: 30px; }
+        .btn-bid { width: 100%; background: #4ade80; color: #0a0a0f; border: none; padding: 20px; border-radius: 16px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-bid:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(74,222,128,0.3); }
+        .admin-panel { position: fixed; bottom: 20px; right: 20px; background: #0f0f18; border: 1px solid var(--acc); padding: 15px; border-radius: 16px; display: none; }
+        .btn-admin { padding: 10px 15px; border-radius: 8px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; margin-left: 10px; }
+        .btn-dismiss { background: #f87171; color: white; }
+        .btn-end { background: #4e4d60; color: white; }
+        #highest { margin-top: 10px; font-size: 14px; color: #9896aa; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="pos" id="pos">GK</div>
+        <div class="name" id="name">Connecting...</div>
+        <div class="bid" id="bid">₹5 Lakh</div>
+        <div id="highest">Waiting for bids...</div>
+        <div class="timer" id="timer">10s</div>
+        <button class="btn-bid" id="bid-btn">BID +₹5 LAKH</button>
+    </div>
+
+    <div class="admin-panel" id="admin-panel">
+        <span style="color:var(--acc); font-size:12px; font-weight:bold;">ADMIN 👑</span>
+        <button class="btn-admin btn-dismiss" id="dismiss-btn">DISMISS</button>
+        <button class="btn-admin btn-end" id="end-btn">EMERGENCY END</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io('/auction');
+        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+
+        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
+
+        if (user.isAuctionAdmin) {
+            document.getElementById('admin-panel').style.display = 'block';
+        }
+
+        socket.on('stateUpdate', (state) => {
+            if (state.gameStatus === 'finished') {
+                location.href = '/auction/results.html';
+                return;
+            }
+            if (!state.currentPlayer) return;
+
+            document.getElementById('name').textContent = state.currentPlayer.name;
+            document.getElementById('pos').textContent = state.currentPlayer.position;
+            document.getElementById('bid').textContent = formatMoney(state.currentBid);
+            document.getElementById('highest').textContent = state.currentBidder ? `Highest Bidder: ${state.currentBidder}` : 'No bids yet';
+
+            const nextBid = state.currentBid + 5;
+            const bidBtn = document.getElementById('bid-btn');
+            bidBtn.textContent = `BID ${formatMoney(nextBid)}`;
+            bidBtn.onclick = () => socket.emit('bid', nextBid);
+
+            // Disable bid if already highest
+            bidBtn.disabled = (state.currentBidder === user.name);
+            bidBtn.style.opacity = bidBtn.disabled ? '0.5' : '1';
+
+            updateTimer(state.timerEnd);
+        });
+
+        function formatMoney(amount) {
+            if (amount < 100) return `₹${amount} Lakh`;
+            return `₹${(amount / 100).toFixed(2)} Crore`;
+        }
+
+        function updateTimer(end) {
+            if (window.timerInt) clearInterval(window.timerInt);
+            window.timerInt = setInterval(() => {
+                const remaining = Math.max(0, Math.floor((end - Date.now()) / 1000));
+                document.getElementById('timer').textContent = remaining + 's';
+                if (remaining === 0) clearInterval(window.timerInt);
+            }, 1000);
+        }
+
+        document.getElementById('dismiss-btn').onclick = () => {
+            if (confirm('Dismiss this player as unsold?')) socket.emit('dismiss');
+        };
+
+        document.getElementById('end-btn').onclick = () => {
+            const val = prompt('Type "END" to trigger emergency end and random allocation:');
+            if (val === 'END') socket.emit('emergencyEnd', 'END');
+        };
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Auction Results</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0a0a0f; --surf: #0f0f18; --acc: #f5b942; --text: #f0eff8; --border: rgba(255,255,255,0.06); }
+        body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; padding: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { font-family: 'Syne'; font-size: 42px; text-align: center; margin-bottom: 40px; }
+        .team-box { background: var(--surf); border: 1px solid var(--border); border-radius: 24px; padding: 30px; margin-bottom: 30px; }
+        .team-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        th { color: #4e4d60; font-size: 12px; text-transform: uppercase; }
+        .btn-hub { display: block; width: fit-content; margin: 40px auto; background: var(--acc); color: #0a0a0f; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 Final Results</h1>
+        <div id="results-list"></div>
+        <a href="/hub.html" class="btn-hub">Back to Hub</a>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io('/auction');
+        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+
+        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
+
+        socket.on('stateUpdate', (state) => {
+            const list = document.getElementById('results-list');
+            list.innerHTML = state.players.map(p => `
+                <div class="team-box">
+                    <div class="team-header">
+                        <h2 style="margin:0; font-family:'Syne';">${p.name}'s Squad</h2>
+                        <span style="color:var(--acc); font-weight:bold;">Remaining: ${formatMoney(p.budget)}</span>
+                    </div>
+                    <div style="color: #9896aa; font-size: 13px; margin-bottom: 10px;">Players: ${p.teamSize}/18</div>
+                    <!-- Detailed player list would be here if the server sent it.
+                         For MVP, we show the summary. -->
+                </div>
+            `).join('');
+        });
+
+        function formatMoney(amount) {
+            if (amount < 100) return `₹${amount} Lakh`;
+            return `₹${(amount / 100).toFixed(2)} Crore`;
+        }
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mejores Amigos — Entry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0a0a0f; --acc: #f5b942; --text: #f0eff8; --border: rgba(255,255,255,0.06); }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(circle at 20% 10%, rgba(245,185,66,0.05), transparent 50%); z-index: -1; }
+        .box { background: #0f0f18; border: 1px solid var(--border); padding: 50px; border-radius: 30px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .logo { width: 90px; height: 90px; border-radius: 20px; margin-bottom: 30px; border: 1px solid var(--border); }
+        h1 { font-family: 'Syne'; font-size: 32px; margin-bottom: 40px; letter-spacing: -1px; }
+        input { width: 100%; background: #16161f; border: 1px solid var(--border); padding: 16px; border-radius: 15px; color: white; margin-bottom: 20px; outline: none; transition: 0.2s; font-size: 15px; }
+        input:focus { border-color: var(--acc); box-shadow: 0 0 20px rgba(245,185,66,0.1); }
+        .btn { width: 100%; background: var(--acc); color: #000; border: none; padding: 18px; border-radius: 15px; font-family: 'Syne'; font-weight: 800; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(245,185,66,0.25); }
+        #err { color: #f87171; font-size: 13px; margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo">
+        <h1>Mejores Amigos</h1>
+        <form id="login-form">
+            <input type="text" id="name" placeholder="Enter your name" required autocomplete="off">
+            <input type="password" id="pass" placeholder="Admin Password" style="display:none;">
+            <button type="submit" class="btn">JOIN COMMUNITY</button>
+            <div id="err"></div>
+        </form>
+    </div>
+    <script>
+        const ni = document.getElementById('name');
+        const pi = document.getElementById('pass');
+        ni.oninput = () => {
+            const val = ni.value.toLowerCase();
+            pi.style.display = (val === 'admin' || val.endsWith('admin')) ? 'block' : 'none';
+        };
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: ni.value, password: pi.value })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('mejoresAmigosUser', JSON.stringify(data.user));
+                location.href = '/hub.html';
+            } else {
+                const err = document.getElementById('err');
+                err.textContent = data.error;
+                err.style.display = 'block';
+            }
+        };
+        if (localStorage.getItem('mejoresAmigosUser')) location.href = '/hub.html';
+    </script>
+</body>
+</html>

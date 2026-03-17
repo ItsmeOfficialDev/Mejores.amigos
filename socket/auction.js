@@ -138,7 +138,7 @@ module.exports = (io) => {
 
         socket.on('startAuction', () => {
             const p = players.find(x => x.id === socket.id);
-            if (p && p.isAdmin && gameStatus === 'lobby') {
+            if (p && p.isAdmin && gameStatus === 'lobby' && players.length >= 4) {
                 auctionQueue = [
                     ...shuffle(PLAYER_LIST.filter(x => x.position === 'GK')),
                     ...shuffle(PLAYER_LIST.filter(x => x.position === 'DEF')),

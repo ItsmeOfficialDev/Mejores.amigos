@@ -2,141 +2,88 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Mejores Amigos — Admin Panel</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Platform Admin 👑</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
-        :root {
-            --bg-void: #0a0a0f;
-            --bg-base: #0f0f18;
-            --bg-surface: #16161f;
-            --accent-gold: #f5b942;
-            --text-primary: #f0eff8;
-            --text-secondary: #9896aa;
-            --border-subtle: rgba(255,255,255,0.06);
-        }
-        body { font-family: 'DM Sans', sans-serif; background: var(--bg-void); color: var(--text-primary); margin: 0; display: flex; min-height: 100vh; }
-        .sidebar { width: 250px; background: var(--bg-base); border-right: 1px solid var(--border-subtle); padding: 20px; }
-        .content { flex: 1; padding: 40px; overflow-y: auto; }
-        h1 { font-family: 'Syne'; font-size: 24px; margin-bottom: 30px; }
-        .nav-item { padding: 12px 15px; border-radius: 10px; cursor: pointer; color: var(--text-secondary); margin-bottom: 5px; }
-        .nav-item:hover { background: var(--bg-surface); color: white; }
-        .nav-item.active { background: var(--bg-surface); color: var(--accent-gold); font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { text-align: left; padding: 15px; border-bottom: 1px solid var(--border-subtle); }
-        th { color: var(--text-secondary); font-size: 13px; text-transform: uppercase; }
-        .btn-action { padding: 8px 12px; border-radius: 5px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .btn-ban { background: #f87171; color: white; }
-        .btn-unban { background: #4ade80; color: #0a0a0f; }
-        .btn-logout { background: #1d1d2a; color: white; border: 1px solid var(--border-subtle); }
+        body { background: #0a0a0f; color: white; display: flex; height: 100vh; overflow: hidden; margin: 0; font-family: 'DM Sans'; }
+        .sidebar { width: 280px; background: #0f0f18; border-right: 1px solid rgba(255,255,255,0.06); padding: 40px 20px; }
+        .main { flex: 1; padding: 60px; overflow-y: auto; }
+        .nav-link { padding: 15px 20px; border-radius: 12px; cursor: pointer; color: #9896aa; margin-bottom: 5px; transition: 0.2s; }
+        .nav-link:hover { background: rgba(255,255,255,0.03); color: #fff; }
+        .nav-link.active { background: var(--accent-gold); color: #000; font-weight: bold; }
+        .card-stat { background: #0f0f18; border: 1px solid rgba(255,255,255,0.06); padding: 25px; border-radius: 20px; }
+        .val { font-family: 'Syne'; font-size: 32px; color: var(--accent-gold); }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #0f0f18; border-radius: 20px; overflow: hidden; }
+        th, td { padding: 20px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .btn-kick { background: #f87171; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <h1>Admin Panel 👑</h1>
-        <div class="nav-item active" onclick="showSection('users')">Users</div>
-        <div class="nav-item" onclick="showSection('logs')">Logs</div>
-        <div class="nav-item" onclick="showSection('anime')">Anime</div>
-        <div class="nav-item" onclick="location.href='/hub.html'">Back to Hub</div>
+        <h1 style="font-family:'Syne'; margin-bottom: 40px;">Admin Panel 👑</h1>
+        <div class="nav-link active" onclick="switchS(event, 'dashboard')"><i class="fas fa-home"></i> Dashboard</div>
+        <div class="nav-link" onclick="switchS(event, 'users')"><i class="fas fa-users"></i> User Control</div>
+<div class="nav-link" onclick="syncAnime()"><i class="fas fa-sync"></i> Sync Anime</div>
+        <div class="nav-link" onclick="location.href='/hub.html'"><i class="fas fa-arrow-left"></i> Exit to Hub</div>
     </div>
-    <div class="content">
-        <h2 id="section-title">User Management</h2>
-        <div id="users-section">
-            <table id="admin-table">
-                <thead>
-                    <tr><th>Name</th><th>Admin</th><th>Banned</th><th>Actions</th></tr>
-                </thead>
-                <tbody id="user-body"></tbody>
-            </table>
+    <div class="main">
+        <div id="dashboard" class="sec">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <div class="card-stat">Total Users <div class="val" id="s-users">0</div></div>
+                <div class="card-stat">Anime Indexed <div class="val" id="s-anime">0</div></div>
+                <div class="card-stat">Active Now <div class="val" id="s-active">0</div></div>
+                <div class="card-stat">Uptime <div class="val" id="s-uptime">0h</div></div>
+            </div>
         </div>
-        <div id="logs-section" style="display:none;">
-            <table id="logs-table">
-                <thead>
-                    <tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr>
-                </thead>
-                <tbody id="log-body"></tbody>
-            </table>
-        </div>
-        <div id="anime-section" style="display:none;">
-            <table id="anime-table">
-                <thead>
-                    <tr><th>Title</th><th>Type</th><th>Episodes</th><th>Actions</th></tr>
-                </thead>
-                <tbody id="anime-body"></tbody>
+        <div id="users" class="sec" style="display:none;">
+            <h2>User Management</h2>
+            <table>
+                <thead><tr><th>Name</th><th>Admin</th><th>IPs</th><th>Actions</th></tr></thead>
+                <tbody id="u-list"></tbody>
             </table>
         </div>
     </div>
-
     <script>
         const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        if (!user || !user.isAdmin) window.location.href = '/hub.html';
+        if (!user || !user.isAdmin) location.href = '/hub.html';
 
-        function showSection(section) {
-            document.getElementById('users-section').style.display = section === 'users' ? 'block' : 'none';
-            document.getElementById('logs-section').style.display = section === 'logs' ? 'block' : 'none';
-            document.getElementById('anime-section').style.display = section === 'anime' ? 'block' : 'none';
-            document.getElementById('section-title').textContent = section.charAt(0).toUpperCase() + section.slice(1) + ' Management';
-
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            event.target.classList.add('active');
-
-            if (section === 'users') loadUsers();
-            if (section === 'logs') loadLogs();
-            if (section === 'anime') loadAnime();
+        async function loadStats() {
+            const r = await fetch('/api/admin/stats').then(x=>x.json());
+            document.getElementById('s-users').textContent = r.userCount;
+            document.getElementById('s-anime').textContent = r.animeCount;
+            document.getElementById('s-active').textContent = r.connections;
+            document.getElementById('s-uptime').textContent = Math.floor(r.uptime/3600) + 'h';
         }
 
         async function loadUsers() {
-            const res = await fetch('/api/admin/users');
-            const users = await res.json();
-            const body = document.getElementById('user-body');
-            body.innerHTML = users.map(u => `
+            const u = await fetch('/api/admin/users').then(x=>x.json());
+            document.getElementById('u-list').innerHTML = u.map(i => `
                 <tr>
-                    <td>${u.name}</td>
-                    <td>${u.isMainAppAdmin ? '👑' : 'No'}</td>
-                    <td>${u.banned ? 'Yes' : 'No'}</td>
-                    <td>
-                        <button class="btn-action ${u.banned ? 'btn-unban' : 'btn-ban'}" onclick="toggleBan('${u._id}', ${u.banned})">
-                            ${u.banned ? 'Unban' : 'Ban'}
-                        </button>
-                    </td>
+                    <td>${i.name}</td>
+                    <td>${i.isMainAppAdmin ? 'Main' : (i.isAuctionAdmin ? 'Auction' : 'None')}</td>
+                    <td>${i.ips.join(', ')}</td>
+                    <td><button class="btn-kick" onclick="kick('${i.name}')">Kick</button></td>
                 </tr>
             `).join('');
         }
 
-        async function loadLogs() {
-            const res = await fetch('/api/admin/logs');
-            const logs = await res.json();
-            const body = document.getElementById('log-body');
-            body.innerHTML = logs.map(l => `
-                <tr>
-                    <td>${new Date(l.timestamp).toLocaleString()}</td>
-                    <td>${l.userName}</td>
-                    <td>${l.action}</td>
-                    <td>${JSON.stringify(l.details)}</td>
-                </tr>
-            `).join('');
-        }
-
-        async function loadAnime() {
-            const res = await fetch('/api/anime');
-            const anime = await res.json();
-            const body = document.getElementById('anime-body');
-            body.innerHTML = anime.map(a => `
-                <tr>
-                    <td>${a.title}</td>
-                    <td>${a.type}</td>
-                    <td>${a.jikanId}</td>
-                    <td><button class="btn-action btn-logout">Refresh</button></td>
-                </tr>
-            `).join('');
-        }
-
-        async function toggleBan(id, isBanned) {
-            await fetch(`/api/admin/users/${id}/${isBanned ? 'unban' : 'ban'}`, { method: 'POST' });
+async function syncAnime() { alert('Syncing started in background...'); await fetch('/api/admin/sync-anime', {method:'POST'}); location.reload(); }
+        async function kick(name) {
+            await fetch('/api/admin/users/kick/' + encodeURIComponent(name), { method: 'POST' });
             loadUsers();
         }
 
-        window.onload = loadUsers;
+        function switchS(e, id) {
+            document.querySelectorAll('.sec').forEach(s => s.style.display='none');
+            document.getElementById(id).style.display='block';
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            if (id === 'users') loadUsers();
+        }
+
+        window.onload = loadStats;
     </script>
 </body>
 </html>

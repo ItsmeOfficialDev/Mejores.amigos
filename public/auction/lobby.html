@@ -2,60 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Auction Lobby</title>
+    <title>Auction Lobby — Mejores Amigos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
-        body { background: #0a0a0f; color: white; font-family: 'DM Sans', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-        .container { background: #0f0f18; padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
-        .player-list { margin: 20px 0; }
-        .btn { background: #4ade80; color: #0a0a0f; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .btn:disabled { background: #222; color: #555; }
+        body { background: #0a0a0f; color: white; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .lobby-box { background: #0f0f18; border: 1px solid rgba(255,255,255,0.06); padding: 50px; border-radius: 30px; width: 100%; max-width: 500px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .p-list { margin: 30px 0; display: flex; flex-direction: column; gap: 10px; }
+        .p-item { background: #16161f; padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; }
+        .btn-lobby { width: 100%; padding: 18px; border-radius: 15px; border: none; font-family: 'Syne'; font-weight: 800; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn-start { background: #4ade80; color: #000; }
+        .btn-invite { background: #f5b942; color: #000; }
+        #status-msg { font-size: 14px; color: #9896aa; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Auction Lobby</h1>
-        <div id="status">Waiting for players...</div>
-        <div class="player-list" id="player-list"></div>
-        <button id="start-btn" class="btn" disabled>START AUCTION</button>
-<button id='invite-btn' class='btn' style='background:#f5b942; margin-top:10px;'>GENERATE INVITE LINK</button>
+    <div class="lobby-box">
+        <h1 style="font-family:'Syne'; font-size:32px; margin-bottom:10px;">Auction Lobby</h1>
+        <div id="status-msg">Waiting for at least 4 players...</div>
+        <div class="p-list" id="player-list"></div>
+        <button class="btn-lobby btn-start" id="start-btn" style="display:none;" disabled>START AUCTION</button>
+        <button class="btn-lobby btn-invite" onclick="copyInvite()">GENERATE INVITE LINK</button>
+        <div style="margin-top:20px;"><a href="/hub.html" style="color:#9896aa; text-decoration:none; font-size:13px;">Exit to Hub</a></div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io('/auction');
         const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+        if (!user) location.href = '/index.html';
 
-        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAdmin });
+        const socket = io('/auction');
+        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
 
         socket.on('stateUpdate', (state) => {
             const list = document.getElementById('player-list');
-            list.innerHTML = state.players.map(p => `<div>${p.isAdmin ? '👑 ' : ''}${p.name}</div>`).join('');
+            list.innerHTML = state.players.map(p => `
+                <div class="p-item">
+                    <span>${p.isAdmin ? '👑 ' : ''}${p.name}</span>
+                    <span style="color:#4ade80">Connected</span>
+                </div>
+            `).join('');
 
             const startBtn = document.getElementById('start-btn');
-            if (user.isAdmin) {
+            if (user.isAuctionAdmin) {
                 startBtn.style.display = 'block';
-                if (state.players.length >= 1) { // Reduced for testing, should be 4
-                    startBtn.disabled = false;
-                }
-            } else {
-                startBtn.style.display = 'none';
+                startBtn.disabled = state.players.length < 4; // Testing mode: 1
+                document.getElementById('status-msg').textContent = `Ready to start with ${state.players.length} players`;
             }
 
-            if (state.gameStatus === 'active') {
-                window.location.href = '/auction/index.html';
-            }
+            if (state.gameStatus === 'active') location.href = '/auction/index.html';
         });
 
         document.getElementById('start-btn').onclick = () => socket.emit('startAuction');
+
+        function copyInvite() {
+            const url = window.location.origin + '/auction/lobby?invite=' + Math.random().toString(36).substring(7);
+            navigator.clipboard.writeText(url);
+            alert('Invite link copied!');
+        }
     </script>
 </body>
 </html>
-<script>
-    document.getElementById('invite-btn').onclick = () => {
-        const link = window.location.origin + '/auction/lobby?invite=' + Math.random().toString(36).substring(7);
-        navigator.clipboard.writeText(link);
-        alert('Invite link copied to clipboard!');
-    };
-
-    // Auto-fill logic for invite links could be added here if needed.
-</script>

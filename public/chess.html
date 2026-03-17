@@ -1,88 +1,101 @@
-const user = JSON.parse(localStorage.getItem('mejoresAmigosUser')); if (!user) window.location.href = '/index.html';
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Mejores Amigos — Chess</title>
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
-        body { background: #0a0a0f; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        #myBoard { width: 400px; margin: 20px; }
-        .info { margin-bottom: 20px; font-size: 18px; }
-        .btn-back { background: #1d1d2a; color: white; border: 1px solid rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 8px; cursor: pointer; text-decoration: none; position: absolute; top: 20px; left: 20px; }
+        body { background: #0a0a0f; color: white; font-family: 'DM Sans', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .game-layout { display: flex; gap: 40px; align-items: flex-start; }
+        #myBoard { width: 500px; border: 4px solid #16161f; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .sidebar-chess { width: 300px; background: #0f0f18; padding: 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
+        .timer-box { font-family: 'Syne'; font-size: 32px; font-weight: 800; background: #16161f; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .timer-white { color: #fff; } .timer-black { color: #9896aa; }
+        .status-msg { font-size: 14px; color: var(--accent-gold); margin-bottom: 15px; text-transform: uppercase; font-weight: bold; }
+        .move-history { background: #0a0a0f; border-radius: 8px; height: 200px; overflow-y: auto; padding: 10px; font-size: 13px; color: #9896aa; }
+        .btn-chess { width: 100%; padding: 12px; border-radius: 8px; border: none; margin-top: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-draw { background: #1d1d2a; color: white; } .btn-resign { background: #f87171; color: white; }
     </style>
 </head>
 <body>
-    <a href="/hub.html" class="btn-back">Back to Hub</a>
-    <div class="info" id="status">Waiting for opponent...</div>
-    <div id="myBoard"></div>
-    <div class="info" id="players">White: ... | Black: ...</div>
+    <div class="game-layout">
+        <div id="myBoard"></div>
+        <div class="sidebar-chess">
+            <div class="timer-box timer-black" id="t-b">10:00</div>
+            <div class="status-msg" id="status">Waiting for Opponent...</div>
+            <div class="move-history" id="moves">Moves will appear here...</div>
+            <div class="timer-box timer-white" id="t-w">10:00</div>
+            <button class="btn-chess btn-draw" onclick="alert('Draw Offered')">Offer Draw</button>
+            <button class="btn-chess btn-resign" onclick="if(confirm('Resign?')) location.href='/hub.html'">Resign</button>
+            <div style="margin-top: 20px; font-size: 11px; opacity: 0.5;">Invite link: <br><span id="inv-url"></span></div>
+        </div>
+    </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io('/chess');
         const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        const gameId = 'global-game'; // Simplified for demo
+        if (!user) window.location.href = '/index.html';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let gameId = urlParams.get('g');
+        if (!gameId) {
+            gameId = Math.random().toString(36).substring(7);
+            window.history.replaceState({}, '', '?g=' + gameId);
+        }
+        document.getElementById('inv-url').textContent = window.location.href;
+
+        const socket = io('/chess');
         let board = null;
         let game = new Chess();
         let myColor = 'w';
 
-        function onDragStart (source, piece, position, orientation) {
+        function onDragStart (s, p) {
             if (game.game_over()) return false;
-            if ((myColor === 'w' && piece.search(/^b/) !== -1) ||
-                (myColor === 'b' && piece.search(/^w/) !== -1)) {
-                return false;
-            }
+            if ((game.turn() === 'w' && p.search(/^b/) !== -1) ||
+                (game.turn() === 'b' && p.search(/^w/) !== -1)) return false;
+            if ((game.turn() === 'w' && myColor !== 'w') ||
+                (game.turn() === 'b' && myColor !== 'b')) return false;
         }
 
-        function onDrop (source, target) {
-            let move = game.move({ from: source, to: target, promotion: 'q' });
+        function onDrop (s, t) {
+            let move = game.move({ from: s, to: t, promotion: 'q' });
             if (move === null) return 'snapback';
             socket.emit('move', { gameId, move });
         }
-
-        function onSnapEnd () { board.position(game.fen()); }
 
         socket.emit('joinGame', { gameId, player: user.name });
 
         socket.on('gameState', (data) => {
             game.load(data.fen);
-            myColor = data.white === user.name ? 'w' : 'b';
+            myColor = (data.white === user.name) ? 'w' : (data.black === user.name ? 'b' : 'w');
             board = ChessBoard('myBoard', {
-                draggable: true,
-                position: data.fen,
-                orientation: myColor === 'w' ? 'white' : 'black',
-                onDragStart: onDragStart,
-                onDrop: onDrop,
-                onSnapEnd: onSnapEnd
+                draggable: true, position: data.fen,
+                orientation: (myColor === 'w' ? 'white' : 'black'),
+                onDragStart, onDrop, onSnapEnd: () => board.position(game.fen())
             });
-            document.getElementById('players').textContent = `White: ${data.white || '...'} | Black: ${data.black || '...'}`;
-            updateStatus();
+            updateUI(data);
         });
 
         socket.on('moveMade', (data) => {
             game.move(data.move);
             board.position(game.fen());
-            updateStatus();
+            updateUI(data);
         });
 
-        socket.on('playerJoined', (data) => {
-            document.getElementById('players').textContent = `White: ${data.white || '...'} | Black: ${data.black || '...'}`;
-        });
+        function updateUI(d) {
+            const turn = game.turn() === 'w' ? 'White' : 'Black';
+            document.getElementById('status').textContent = `${turn}'s Turn`;
+            document.getElementById('t-w').textContent = fmt(d.timers.w);
+            document.getElementById('t-b').textContent = fmt(d.timers.b);
+        }
 
-        function updateStatus() {
-            let status = '';
-            let moveColor = game.turn() === 'w' ? 'White' : 'Black';
-            if (game.in_checkmate()) status = 'Game over, ' + moveColor + ' is in checkmate.';
-            else if (game.in_draw()) status = 'Game over, drawn position';
-            else {
-                status = moveColor + ' to move';
-                if (game.in_check()) status += ', ' + moveColor + ' is in check';
-            }
-            document.getElementById('status').textContent = status;
+        function fmt(s) {
+            const m = Math.floor(s / 60);
+            return `${m}:${(s % 60).toString().padStart(2, '0')}`;
         }
     </script>
 </body>

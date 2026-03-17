@@ -1,28 +1,37 @@
 module.exports = (io) => {
-  const tttNamespace = io.of('/tictactoe');
-  const games = new Map();
+    const ns = io.of('/tictactoe');
+    const games = new Map();
 
-  tttNamespace.on('connection', (socket) => {
-    socket.on('joinTTT', ({ gameId, player }) => {
-      socket.join(gameId);
-      let gameData = games.get(gameId);
-      if (!gameData) {
-        gameData = { board: Array(9).fill(''), X: player, O: null, turn: 'X' };
-        games.set(gameId, gameData);
-      } else if (!gameData.O && gameData.X !== player) {
-        gameData.O = player;
-      }
-      socket.emit('tttState', gameData);
-      socket.to(gameId).emit('tttPlayerJoined', gameData);
-    });
+    ns.on('connection', (socket) => {
+        socket.on('joinGame', ({ gameId, player }) => {
+            socket.join(gameId);
+            let g = games.get(gameId);
+            if (!g) {
+                g = { board: Array(9).fill(''), X: player, O: null, turn: 'X' };
+                games.set(gameId, g);
+            } else if (!g.O && g.X !== player) {
+                g.O = player;
+            }
+            ns.to(gameId).emit('gameState', g);
+        });
 
-    socket.on('tttMove', ({ gameId, index, player }) => {
-      const gameData = games.get(gameId);
-      if (gameData && gameData.turn === player && gameData.board[index] === '') {
-        gameData.board[index] = player;
-        gameData.turn = player === 'X' ? 'O' : 'X';
-        tttNamespace.to(gameId).emit('tttMoveMade', { index, player, nextTurn: gameData.turn });
-      }
+        socket.on('move', ({ gameId, index, symbol }) => {
+            const g = games.get(gameId);
+            if (g && g.board[index] === '' && g.turn === symbol) {
+                g.board[index] = symbol;
+                g.turn = symbol === 'X' ? 'O' : 'X';
+                ns.to(gameId).emit('gameState', g);
+
+                // Check win
+                const winPatterns = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+                for (const p of winPatterns) {
+                    if (g.board[p[0]] && g.board[p[0]] === g.board[p[1]] && g.board[p[0]] === g.board[p[2]]) {
+                        ns.to(gameId).emit('gameOver', { winner: symbol });
+                        return;
+                    }
+                }
+                if (!g.board.includes('')) ns.to(gameId).emit('gameOver', { winner: 'Draw' });
+            }
+        });
     });
-  });
 };
