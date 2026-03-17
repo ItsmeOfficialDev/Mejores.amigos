@@ -17,6 +17,7 @@
         <div id="status">Waiting for players...</div>
         <div class="player-list" id="player-list"></div>
         <button id="start-btn" class="btn" disabled>START AUCTION</button>
+<button id='invite-btn' class='btn' style='background:#f5b942; margin-top:10px;'>GENERATE INVITE LINK</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -49,3 +50,12 @@
     </script>
 </body>
 </html>
+<script>
+    document.getElementById('invite-btn').onclick = () => {
+        const link = window.location.origin + '/auction/lobby?invite=' + Math.random().toString(36).substring(7);
+        navigator.clipboard.writeText(link);
+        alert('Invite link copied to clipboard!');
+    };
+
+    // Auto-fill logic for invite links could be added here if needed.
+</script>

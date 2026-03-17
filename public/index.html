@@ -3,213 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mejores Amigos - Friends Community</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>Mejores Amigos — Entry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-void: #0a0a0f;
-            --bg-base: #0f0f18;
-            --accent-gold: #f5b942;
-            --text-primary: #f0eff8;
-            --text-secondary: #9896aa;
-            --border-subtle: rgba(255,255,255,0.06);
-            --radius-md: 14px;
-        }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background-color: var(--bg-void);
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        .login-container {
-            background: var(--bg-base);
-            border: 1px solid var(--border-subtle);
-            padding: 48px;
-            border-radius: 24px;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-
-        .logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 24px;
-            display: block;
-        }
-
-        h1 {
-            font-family: 'Syne', sans-serif;
-            font-size: 28px;
-            margin-bottom: 32px;
-            letter-spacing: -0.02em;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-
-        input {
-            width: 100%;
-            background: #16161f;
-            border: 1px solid var(--border-subtle);
-            padding: 14px 16px;
-            border-radius: var(--radius-md);
-            color: white;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        input:focus {
-            border-color: var(--accent-gold);
-        }
-
-        #password-group {
-            display: none;
-        }
-
-        .btn-join {
-            width: 100%;
-            background: linear-gradient(135deg, var(--accent-gold), #e8890c);
-            color: #0a0a0f;
-            border: none;
-            padding: 16px;
-            border-radius: var(--radius-md);
-            font-family: 'Syne', sans-serif;
-            font-weight: 800;
-            font-size: 16px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 10px;
-        }
-
-        .btn-join:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(245,185,66,0.3);
-        }
-
-        .error-msg {
-            color: #f87171;
-            font-size: 13px;
-            margin-top: 16px;
-            display: none;
-        }
-
-        .links {
-            margin-top: 32px;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        .links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-        }
-
-        .links a:hover {
-            color: var(--accent-gold);
-        }
+        :root { --bg: #0a0a0f; --acc: #f5b942; --text: #f0eff8; --border: rgba(255,255,255,0.06); }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(circle at 20% 10%, rgba(245,185,66,0.05), transparent 50%); z-index: -1; }
+        .box { background: #0f0f18; border: 1px solid var(--border); padding: 50px; border-radius: 30px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .logo { width: 90px; height: 90px; border-radius: 20px; margin-bottom: 30px; border: 1px solid var(--border); }
+        h1 { font-family: 'Syne'; font-size: 32px; margin-bottom: 40px; letter-spacing: -1px; }
+        input { width: 100%; background: #16161f; border: 1px solid var(--border); padding: 16px; border-radius: 15px; color: white; margin-bottom: 20px; outline: none; transition: 0.2s; font-size: 15px; }
+        input:focus { border-color: var(--acc); box-shadow: 0 0 20px rgba(245,185,66,0.1); }
+        .btn { width: 100%; background: var(--acc); color: #000; border: none; padding: 18px; border-radius: 15px; font-family: 'Syne'; font-weight: 800; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(245,185,66,0.25); }
+        #err { color: #f87171; font-size: 13px; margin-top: 15px; display: none; }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo">
+    <div class="box">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo">
         <h1>Mejores Amigos</h1>
-
         <form id="login-form">
-            <div class="input-group">
-                <label for="username">Enter your name</label>
-                <input type="text" id="username" placeholder="e.g. Ishan" required autocomplete="off">
-            </div>
-
-            <div class="input-group" id="password-group">
-                <label for="password">Admin Password</label>
-                <input type="password" id="password" placeholder="Devadutt@2011">
-            </div>
-
-            <button type="submit" class="btn-join">JOIN COMMUNITY</button>
-            <div id="error-msg" class="error-msg"></div>
+            <input type="text" id="name" placeholder="Enter your name" required autocomplete="off">
+            <input type="password" id="pass" placeholder="Admin Password" style="display:none;">
+            <button type="submit" class="btn">JOIN COMMUNITY</button>
+            <div id="err"></div>
         </form>
-
-        <div class="links">
-            <a href="#">About</a>
-            <a href="#">Help</a>
-        </div>
     </div>
-
     <script>
-        const usernameInput = document.getElementById('username');
-        const passwordGroup = document.getElementById('password-group');
-        const loginForm = document.getElementById('login-form');
-        const errorMsg = document.getElementById('error-msg');
-
-        usernameInput.addEventListener('input', () => {
-            if (usernameInput.value.toLowerCase().endsWith('admin')) {
-                passwordGroup.style.display = 'block';
-            } else {
-                passwordGroup.style.display = 'none';
-            }
-        });
-
-        loginForm.addEventListener('submit', async (e) => {
+        const ni = document.getElementById('name');
+        const pi = document.getElementById('pass');
+        ni.oninput = () => {
+            const val = ni.value.toLowerCase();
+            pi.style.display = (val === 'admin' || val.endsWith('admin')) ? 'block' : 'none';
+        };
+        document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
-            errorMsg.style.display = 'none';
-
-            const name = usernameInput.value;
-            const password = document.getElementById('password').value;
-
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    localStorage.setItem('mejoresAmigosUser', JSON.stringify(data.user));
-                    window.location.href = '/hub.html';
-                } else {
-                    errorMsg.textContent = data.error;
-                    errorMsg.style.display = 'block';
-                }
-            } catch (err) {
-                errorMsg.textContent = "Connection error. Try again.";
-                errorMsg.style.display = 'block';
-            }
-        });
-
-        // Auto-login check
-        window.onload = () => {
-            const storedUser = localStorage.getItem('mejoresAmigosUser');
-            if (storedUser) {
-                window.location.href = '/hub.html';
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: ni.value, password: pi.value })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('mejoresAmigosUser', JSON.stringify(data.user));
+                location.href = '/hub.html';
+            } else {
+                const err = document.getElementById('err');
+                err.textContent = data.error;
+                err.style.display = 'block';
             }
         };
+        if (localStorage.getItem('mejoresAmigosUser')) location.href = '/hub.html';
     </script>
 </body>
 </html>
