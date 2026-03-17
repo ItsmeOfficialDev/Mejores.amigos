@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mejores Amigos — Auction Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0a0a0f; --acc: #4ade80; --text: #f0eff8; --border: rgba(255,255,255,0.06); }
+        body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .box { background: #0f0f18; border: 1px solid var(--border); padding: 40px; border-radius: 24px; width: 100%; max-width: 360px; text-align: center; }
+        input { width: 100%; background: #16161f; border: 1px solid var(--border); padding: 14px; border-radius: 12px; color: white; margin-bottom: 15px; outline: none; }
+        input:focus { border-color: var(--acc); }
+        .btn { width: 100%; background: var(--acc); color: #0a0a0f; border: none; padding: 15px; border-radius: 12px; font-family: 'Syne'; font-weight: 800; cursor: pointer; }
+        #error { color: #f87171; font-size: 13px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1 style="font-family:'Syne'; margin-bottom: 30px;">Auction Entry</h1>
+        <form id="form">
+            <input type="text" id="name" placeholder="Enter your name" required autocomplete="off">
+            <input type="password" id="pass" placeholder="Auction Password" style="display:none;">
+            <button type="submit" class="btn">JOIN LOBBY</button>
+            <div id="error"></div>
+        </form>
+    </div>
+    <script>
+        const nameInput = document.getElementById('name');
+        const passInput = document.getElementById('pass');
+        const errorDiv = document.getElementById('error');
+
+        nameInput.oninput = () => {
+            passInput.style.display = nameInput.value.toLowerCase().endsWith('admin') ? 'block' : 'none';
+        };
+
+        document.getElementById('form').onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/login/auction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: nameInput.value, password: passInput.value })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+                user.isAuctionAdmin = data.user.isAuctionAdmin;
+                localStorage.setItem('mejoresAmigosUser', JSON.stringify(user));
+                location.href = '/auction/lobby';
+            } else {
+                errorDiv.textContent = data.error;
+                errorDiv.style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>

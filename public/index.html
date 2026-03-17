@@ -3,55 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mejores Amigos - Auction Game</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <title>Mejores Amigos — Entry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0a0a0f; --acc: #f5b942; --text: #f0eff8; --border: rgba(255,255,255,0.06); }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(circle at 20% 10%, rgba(245,185,66,0.05), transparent 50%); z-index: -1; }
+        .box { background: #0f0f18; border: 1px solid var(--border); padding: 50px; border-radius: 30px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .logo { width: 90px; height: 90px; border-radius: 20px; margin-bottom: 30px; border: 1px solid var(--border); }
+        h1 { font-family: 'Syne'; font-size: 32px; margin-bottom: 40px; letter-spacing: -1px; }
+        input { width: 100%; background: #16161f; border: 1px solid var(--border); padding: 16px; border-radius: 15px; color: white; margin-bottom: 20px; outline: none; transition: 0.2s; font-size: 15px; }
+        input:focus { border-color: var(--acc); box-shadow: 0 0 20px rgba(245,185,66,0.1); }
+        .btn { width: 100%; background: var(--acc); color: #000; border: none; padding: 18px; border-radius: 15px; font-family: 'Syne'; font-weight: 800; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(245,185,66,0.25); }
+        #err { color: #f87171; font-size: 13px; margin-top: 15px; display: none; }
+    </style>
 </head>
-<body class="landing-page">
-    <div class="container">
-        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O27UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo">
-        <h1>MEJORES AMIGOS</h1>
-        <p style="margin-bottom: 2rem; opacity: 0.8; letter-spacing: 1px;">FANTASY FOOTBALL AUCTION</p>
-        <div class="join-form">
-            <input type="text" id="nameInput" placeholder="Enter Your Name">
-            <div id="adminPasswordField" style="display: none;">
-                <input type="password" id="passwordInput" placeholder="Admin Password">
-            </div>
-            <button id="joinBtn">JOIN AUCTION</button>
-            <p id="errorMessage" class="error"></p>
-        </div>
-        <div class="footer-links">
-            <a href="/about.html">ABOUT</a>
-            <a href="/help.html">HELP</a>
-        </div>
+<body>
+    <div class="box">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo">
+        <h1>Mejores Amigos</h1>
+        <form id="login-form">
+            <input type="text" id="name" placeholder="Enter your name" required autocomplete="off">
+            <input type="password" id="pass" placeholder="Admin Password" style="display:none;">
+            <button type="submit" class="btn">JOIN COMMUNITY</button>
+            <div id="err"></div>
+        </form>
     </div>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/main.js"></script>
     <script>
-        const nameInput = document.getElementById('nameInput');
-        const adminField = document.getElementById('adminPasswordField');
-        const joinBtn = document.getElementById('joinBtn');
-        const errorMsg = document.getElementById('errorMessage');
-
-        nameInput.addEventListener('input', () => {
-            if (nameInput.value.toLowerCase().endsWith('admin')) {
-                adminField.style.display = 'block';
+        const ni = document.getElementById('name');
+        const pi = document.getElementById('pass');
+        ni.oninput = () => {
+            const val = ni.value.toLowerCase();
+            pi.style.display = (val === 'admin' || val.endsWith('admin')) ? 'block' : 'none';
+        };
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: ni.value, password: pi.value })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('mejoresAmigosUser', JSON.stringify(data.user));
+                location.href = '/hub.html';
             } else {
-                adminField.style.display = 'none';
+                const err = document.getElementById('err');
+                err.textContent = data.error;
+                err.style.display = 'block';
             }
-        });
-
-        joinBtn.addEventListener('click', () => {
-            const name = nameInput.value;
-            const password = document.getElementById('passwordInput').value;
-            localStorage.removeItem('playerToken'); // Clear old token on manual join
-            localStorage.setItem('playerName', name);
-            if (name.toLowerCase().endsWith('admin')) {
-                socket.emit('join', { name, password });
-            } else {
-                socket.emit('join', { name });
-            }
-        });
+        };
+        if (localStorage.getItem('mejoresAmigosUser')) location.href = '/hub.html';
     </script>
 </body>
 </html>
-<div id="toastContainer"></div>
