@@ -1,20 +1,2 @@
-
-> app@1.0.0 start
-> node server.js
-
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
 Server running on port 3000
-New connection: qjiSHr-zmmq2vInVAAAB
-Join request: ishanadmin undefined qjiSHr-zmmq2vInVAAAB
-User Ishan joined. Admin: true
-User disconnected: Ishan
-New connection: wPFl9NHIw6n9hI7PAAAD
-Join request: Ishan jlgjooya7 wPFl9NHIw6n9hI7PAAAD
-User Ishan reconnected. Admin: true
-New connection: -6G40bTS3SK_tR4oAAAF
-Join request: Player0 undefined -6G40bTS3SK_tR4oAAAF
-New connection: lTtMxo6WJJTcJDxoAAAH
-Join request: Player1 undefined lTtMxo6WJJTcJDxoAAAH
-New connection: X-PtXGZIBts2d-TWAAAJ
-Join request: Player2 undefined X-PtXGZIBts2d-TWAAAJ
-User disconnected: Ishan
-Terminated
