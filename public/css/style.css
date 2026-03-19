@@ -666,3 +666,20 @@ th {
     from { opacity: 0; transform: translateY(-20px) scale(0.9); }
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
+/* --- Heavenly Player Styles --- */
+.heaven-player-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color); }
+.vlc-style-video { width: 100%; height: 100%; display: block; }
+.h-controls { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.9)); padding: 20px; opacity: 0; transition: 0.3s; }
+.heaven-player-wrapper:hover .h-controls { opacity: 1; }
+.h-progress-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin-bottom: 15px; cursor: pointer; }
+.h-progress-fill { height: 100%; background: var(--accent-gold); width: 0; border-radius: 2px; position: relative; }
+.h-btns { display: flex; align-items: center; gap: 20px; color: #fff; }
+.h-btns button { color: #fff; font-size: 18px; cursor: pointer; opacity: 0.8; transition: 0.2s; }
+.h-btns button:hover { opacity: 1; transform: scale(1.1); }
+.h-spacer { flex: 1; }
+.h-select { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 5px 10px; border-radius: 6px; outline: none; font-size: 12px; }
+.p-details { padding: 25px 0; }
+.p-ep-nav { display: flex; gap: 10px; margin-top: 15px; }
+.p-ep-nav button { background: var(--bg-surface); border: 1px solid var(--border-color); color: #fff; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+.p-ep-nav button:hover:not(:disabled) { background: var(--accent-gold); color: #000; }
+.vlc-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: Syne; color: var(--accent-gold); font-weight: bold; text-shadow: 0 0 10px rgba(245,185,66,0.5); }

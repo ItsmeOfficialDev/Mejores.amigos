@@ -1,70 +1,57 @@
-const user = JSON.parse(localStorage.getItem('mejoresAmigosUser')); if (!user) window.location.href = '/index.html';
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Mejores Amigos — Tic Tac Toe</title>
+    <title>Tic Tac Toe — Mejores Amigos</title>
     <style>
         body { background: #0a0a0f; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .board { display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 10px; margin: 20px; }
-        .cell { width: 100px; height: 100px; background: #16161f; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer; font-family: 'Syne'; }
-        .info { font-size: 18px; margin-bottom: 20px; }
-        .btn-back { background: #1d1d2a; color: white; border: 1px solid rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 8px; cursor: pointer; text-decoration: none; position: absolute; top: 20px; left: 20px; }
+        .ttt-grid { display: grid; grid-template-columns: repeat(3, 120px); grid-gap: 15px; margin: 30px; }
+        .ttt-cell { width: 120px; height: 120px; background: #16161f; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 54px; font-weight: 800; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); color: #4ade80; transition: 0.2s; }
+        .ttt-cell:hover { background: #1d1d2a; }
+        .info { font-size: 20px; color: #9896aa; font-family: 'Syne'; }
+        .btn-back { position: absolute; top: 20px; left: 20px; color: #9896aa; text-decoration: none; }
     </style>
 </head>
 <body>
-    <a href="/hub.html" class="btn-back">Back to Hub</a>
-    <div class="info" id="status">Waiting for opponent...</div>
-    <div class="board" id="board">
-        <div class="cell" onclick="makeMove(0)"></div>
-        <div class="cell" onclick="makeMove(1)"></div>
-        <div class="cell" onclick="makeMove(2)"></div>
-        <div class="cell" onclick="makeMove(3)"></div>
-        <div class="cell" onclick="makeMove(4)"></div>
-        <div class="cell" onclick="makeMove(5)"></div>
-        <div class="cell" onclick="makeMove(6)"></div>
-        <div class="cell" onclick="makeMove(7)"></div>
-        <div class="cell" onclick="makeMove(8)"></div>
+    <a href="/hub.html" class="btn-back"><i class="fas fa-chevron-left"></i> Back to Hub</a>
+    <div class="info" id="status">Connecting...</div>
+    <div class="ttt-grid">
+        <div class="ttt-cell" onclick="makeMove(0)"></div><div class="ttt-cell" onclick="makeMove(1)"></div><div class="ttt-cell" onclick="makeMove(2)"></div>
+        <div class="ttt-cell" onclick="makeMove(3)"></div><div class="ttt-cell" onclick="makeMove(4)"></div><div class="ttt-cell" onclick="makeMove(5)"></div>
+        <div class="ttt-cell" onclick="makeMove(6)"></div><div class="ttt-cell" onclick="makeMove(7)"></div><div class="ttt-cell" onclick="makeMove(8)"></div>
     </div>
-    <div class="info" id="players">Player X: ... | Player O: ...</div>
+    <div id="players" style="margin-bottom: 20px;"></div>
+    <div style="font-size:11px; opacity:0.5;">Invite URL: <span id="url"></span></div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io('/tictactoe');
         const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        const gameId = 'global-ttt';
-        let mySymbol = null;
-        let currentBoard = Array(9).fill('');
-        let currentTurn = 'X';
+        const urlParams = new URLSearchParams(window.location.search);
+        let gameId = urlParams.get('g') || Math.random().toString(36).substring(7);
+        if(!urlParams.get('g')) window.history.replaceState({}, '', '?g=' + gameId);
+        document.getElementById('url').textContent = window.location.href;
 
-        socket.emit('joinTTT', { gameId, player: user.name });
+        const socket = io('/tictactoe');
+        let mySym = null, currentTurn = 'X', board = Array(9).fill('');
 
-        socket.on('tttState', (data) => {
-            currentBoard = data.board;
-            currentTurn = data.turn;
-            mySymbol = data.X === user.name ? 'X' : (data.O === user.name ? 'O' : null);
-            document.getElementById('players').textContent = `Player X: ${data.X || '...'} | Player O: ${data.O || '...'}`;
-            updateBoard();
+        socket.emit('joinGame', { gameId, player: user.name });
+        socket.on('gameState', (g) => {
+            board = g.board; currentTurn = g.turn;
+            mySym = (g.X === user.name) ? 'X' : (g.O === user.name ? 'O' : null);
+            document.getElementById('players').textContent = `X: ${g.X} vs O: ${g.O || '?'}`;
+            updateUI();
         });
 
-        function makeMove(index) {
-            if (currentTurn !== mySymbol || currentBoard[index] !== '') return;
-            socket.emit('tttMove', { gameId, index, player: mySymbol });
+        function makeMove(i) {
+            if (currentTurn === mySym && board[i] === '') socket.emit('move', { gameId, index: i, symbol: mySym });
         }
 
-        socket.on('tttMoveMade', (data) => {
-            currentBoard[data.index] = data.player;
-            currentTurn = data.nextTurn;
-            updateBoard();
-        });
-
-        function updateBoard() {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach((cell, i) => {
-                cell.textContent = currentBoard[i];
-            });
-            document.getElementById('status').textContent = currentTurn === mySymbol ? "Your turn!" : `${currentTurn}'s turn`;
+        function updateUI() {
+            document.querySelectorAll('.ttt-cell').forEach((c, i) => c.textContent = board[i]);
+            document.getElementById('status').textContent = (currentTurn === mySym) ? "Your Turn" : "Opponent's Turn";
         }
+
+        socket.on('gameOver', (d) => { alert('Game Over: ' + d.winner); location.href='/hub.html'; });
     </script>
 </body>
 </html>

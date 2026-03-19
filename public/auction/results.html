@@ -2,53 +2,134 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Auction Results</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mejores Amigos | Auction Results</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-        :root { --bg: #0a0a0f; --surf: #0f0f18; --acc: #f5b942; --text: #f0eff8; --border: rgba(255,255,255,0.06); }
-        body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; padding: 40px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        h1 { font-family: 'Syne'; font-size: 42px; text-align: center; margin-bottom: 40px; }
-        .team-box { background: var(--surf); border: 1px solid var(--border); border-radius: 24px; padding: 30px; margin-bottom: 30px; }
-        .team-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        th { color: #4e4d60; font-size: 12px; text-transform: uppercase; }
-        .btn-hub { display: block; width: fit-content; margin: 40px auto; background: var(--acc); color: #0a0a0f; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { min-height: 100vh; background: #0b1120; color: #fff; padding-bottom: 50px; overflow-x: hidden; }
+        #bgAnim { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 50% 50%, #1a2c3e, #0b1120); }
+        #bgAnim span { position: absolute; background: rgba(255, 215, 0, 0.1); border-radius: 50%; pointer-events: none; animation: float 15s infinite linear; }
+        @keyframes float { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 50% { opacity: 0.5; } 100% { transform: translateY(-100px) scale(1.5); opacity: 0; } }
+        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        .header { text-align: center; margin-bottom: 50px; }
+        .logo-text { font-family: 'Syne'; font-size: 3rem; color: #ffd700; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+        .sub-title { font-size: 1.2rem; color: rgba(255,255,255,0.6); margin-top: 10px; }
+        .emergency-banner { background: rgba(248, 113, 113, 0.15); border: 1px solid #f87171; color: #f87171; padding: 15px; border-radius: 12px; margin-bottom: 30px; text-align: center; display: none; font-weight: 600; }
+        .results-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 215, 0, 0.1); border-radius: 25px; padding: 30px; }
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; gap: 20px; flex-wrap: wrap; }
+        .selector { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 215, 0, 0.2); color: #fff; padding: 12px 20px; border-radius: 12px; outline: none; font-weight: 600; cursor: pointer; min-width: 250px; }
+        .export-group { display: flex; gap: 10px; }
+        .export-btn { background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; font-size: 0.9rem; }
+        .export-btn:hover { background: rgba(255, 215, 0, 0.1); border-color: #ffd700; color: #ffd700; }
+        .team-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-item { background: rgba(0, 0, 0, 0.2); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .stat-val { font-size: 1.3rem; font-weight: 800; color: #ffd700; }
+        .stat-lbl { font-size: 0.75rem; color: rgba(255, 255, 255, 0.5); text-transform: uppercase; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; padding: 15px; color: rgba(255,255,255,0.4); font-size: 0.8rem; text-transform: uppercase; border-bottom: 2px solid rgba(255,215,0,0.1); }
+        td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .pos-badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; margin-right: 10px; }
+        .GK { background: #f5b942; color: #000; }
+        .DEF { background: #3b82f6; color: #fff; }
+        .MID { background: #22c55e; color: #fff; }
+        .FWD { background: #ef4444; color: #fff; }
+        .random-alloc { font-size: 0.7rem; color: #f87171; font-style: italic; margin-left: 5px; }
+        .btn-home { display: block; width: fit-content; margin: 40px auto 0; background: linear-gradient(135deg, #ffd700, #ffa500); color: #0b1120; padding: 15px 40px; border-radius: 15px; text-decoration: none; font-family: 'Syne'; font-weight: 800; transition: 0.3s; }
     </style>
 </head>
 <body>
+    <div id="bgAnim"></div>
     <div class="container">
-        <h1>🏆 Final Results</h1>
-        <div id="results-list"></div>
-        <a href="/hub.html" class="btn-hub">Back to Hub</a>
+        <div class="header">
+            <div class="logo-text">Mejores Amigos</div>
+            <div class="sub-title">🏆 Auction Results 🏆</div>
+        </div>
+        <div id="emergencyEndBanner" class="emergency-banner">
+            <i class="fas fa-exclamation-triangle"></i> Auction ended early by admin. Unsold players were randomly allocated at ₹10 Lakh each.
+        </div>
+        <div class="results-card">
+            <div class="controls">
+                <select id="userSelector" class="selector"></select>
+                <div class="export-group">
+                    <button id="exportAllBtn" class="export-btn" style="display:none; background:rgba(255,215,0,0.15); border-color:#ffd700;" onclick="exportAll()">EXPORT ALL</button>
+                    <button class="export-btn" onclick="exportData('pdf')">PDF</button>
+                    <button class="export-btn" onclick="exportData('csv')">CSV</button>
+                </div>
+            </div>
+            <div class="team-summary" id="teamSummary"></div>
+            <div style="overflow-x: auto;"><table id="playerTable"><thead><tr><th>Player Name</th><th>Position</th><th>Price</th></tr></thead><tbody id="playerBody"></tbody></table></div>
+        </div>
+        <a href="/hub.html" class="btn-home">BACK TO HUB</a>
     </div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        const bg = document.getElementById('bgAnim');
+        for(let i=0; i<25; i++) {
+            const s = document.createElement('span');
+            const size = Math.random()*30+10;
+            s.style.width = size+'px'; s.style.height = size+'px';
+            s.style.left = Math.random()*100+'%';
+            s.style.animationDelay = Math.random()*15+'s';
+            bg.appendChild(s);
+        }
         const socket = io('/auction');
-        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-
-        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
-
+        const currentUser = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+        let allPlayersData = [];
+        let selectedPlayer = null;
+        socket.emit('joinAuction', { name: currentUser.name, isAdmin: currentUser.isAuctionAdmin });
         socket.on('stateUpdate', (state) => {
-            const list = document.getElementById('results-list');
-            list.innerHTML = state.players.map(p => `
-                <div class="team-box">
-                    <div class="team-header">
-                        <h2 style="margin:0; font-family:'Syne';">${p.name}'s Squad</h2>
-                        <span style="color:var(--acc); font-weight:bold;">Remaining: ${formatMoney(p.budget)}</span>
-                    </div>
-                    <div style="color: #9896aa; font-size: 13px; margin-bottom: 10px;">Players: ${p.teamSize}/18</div>
-                    <!-- Detailed player list would be here if the server sent it.
-                         For MVP, we show the summary. -->
-                </div>
-            `).join('');
+            allPlayersData = state.players;
+            const selector = document.getElementById('userSelector');
+            const currentVal = selector.value || currentUser.name;
+            selector.innerHTML = state.players.map(p => `<option value="${p.name}">${p.name}'s Squad</option>`).join('');
+            selector.value = currentVal;
+            selectedPlayer = state.players.find(x => x.name === currentVal);
+            if (state.reason === 'emergency') document.getElementById('emergencyEndBanner').style.display = 'block';
+            if (currentUser.isAuctionAdmin) document.getElementById('exportAllBtn').style.display = 'block';
+            renderTeam();
         });
-
-        function formatMoney(amount) {
-            if (amount < 100) return `₹${amount} Lakh`;
-            return `₹${(amount / 100).toFixed(2)} Crore`;
+        document.getElementById('userSelector').onchange = (e) => {
+            selectedPlayer = allPlayersData.find(x => x.name === e.target.value);
+            renderTeam();
+        };
+        function renderTeam() {
+            if (!selectedPlayer) return;
+            const team = selectedPlayer.team || [];
+            document.getElementById('teamSummary').innerHTML = `
+                <div class="stat-item"><div class="stat-val">${formatMoney(selectedPlayer.budget)}</div><div class="stat-lbl">Budget Left</div></div>
+                <div class="stat-item"><div class="stat-val">${formatMoney(1500 - selectedPlayer.budget)}</div><div class="stat-lbl">Total Spent</div></div>
+                <div class="stat-item"><div class="stat-val">${team.length}/18</div><div class="stat-lbl">Squad Size</div></div>
+            `;
+            document.getElementById('playerBody').innerHTML = team.map(p => `
+                <tr><td><span class="pos-badge ${p.position}">${p.position}</span> ${p.name} ${p.random ? '<span class="random-alloc">(Allocated)</span>' : ''}</td><td>${p.position}</td><td style="font-weight:700; color:#ffd700;">${formatMoney(p.price)}</td></tr>
+            `).join('');
+        }
+        function formatMoney(l) { return l < 100 ? `₹${l} Lakh` : `₹${(l/100).toFixed(2)} Crore`; }
+        function exportData(type) {
+            if(!selectedPlayer) return;
+            const { jsPDF } = window.jspdf;
+            if(type === 'csv') {
+                let csv = "Player,Pos,Price,Type\n" + selectedPlayer.team.map(p => `${p.name},${p.position},${p.price},${p.random?'Alloc':'Sold'}`).join('\n');
+                const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download=`${selectedPlayer.name}_team.csv`; a.click();
+            } else {
+                const doc = new jsPDF(); doc.text(`Mejores Amigos - ${selectedPlayer.name}`, 20, 20);
+                doc.autoTable({ startY: 30, head: [['Name', 'Pos', 'Price', 'Type']], body: selectedPlayer.team.map(p => [p.name, p.position, formatMoney(p.price), p.random?'Alloc':'Sold']) });
+                doc.save(`${selectedPlayer.name}_team.pdf`);
+            }
+        }
+        function exportAll() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            allPlayersData.forEach((p, i) => {
+                if(i > 0) doc.addPage();
+                doc.text(`Mejores Amigos - ${p.name}'s Squad`, 20, 20);
+                doc.autoTable({ startY: 30, head: [['Name', 'Pos', 'Price', 'Type']], body: p.team.map(pt => [pt.name, pt.position, formatMoney(pt.price), pt.random?'Allocated':'Sold']) });
+            });
+            doc.save('all_teams_report.pdf');
         }
     </script>
 </body>

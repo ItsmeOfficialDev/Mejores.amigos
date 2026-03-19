@@ -111,7 +111,7 @@ module.exports = (io) => {
     let currentIdx = -1;
     let currentBid = 5;
     let currentBidder = null;
-    let timerEnd = 0;
+    let timerEnd = 0; let isPaused = false; let timeLeftOnPause = 0;
 
     function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
 
@@ -120,13 +120,22 @@ module.exports = (io) => {
             gameStatus,
             currentBid,
             currentBidder,
-            timerEnd,
+            timerEnd, isPaused,
             currentPlayer: auctionQueue[currentIdx] || null,
-            players: players.map(p => ({ name: p.name, isAdmin: p.isAdmin, budget: p.budget, teamSize: p.team.length }))
+            players: players.map(p => ({ name: p.name, isAdmin: p.isAdmin, budget: p.budget, teamSize: p.team.length, team: gameStatus === "finished" ? p.team : [] }))
         });
     }
 
     ns.on('connection', (socket) => {
+        socket.on('getUpcoming', () => {
+            const next10 = auctionQueue.slice(currentIdx + 1, currentIdx + 11);
+            socket.emit('upcomingPlayers', next10);
+        });
+
+        socket.on('getMyTeam', () => {
+            const p = players.find(x => x.id === socket.id);
+            if(p) socket.emit('myTeamData', p.team);
+        });
         socket.on('joinAuction', ({ name, isAdmin }) => {
             let p = players.find(x => x.name === name);
             if (!p) {
@@ -136,9 +145,17 @@ module.exports = (io) => {
             broadcast();
         });
 
-        socket.on('startAuction', () => {
+        socket.on('resetLobby', () => {
             const p = players.find(x => x.id === socket.id);
             if (p && p.isAdmin && gameStatus === 'lobby') {
+                players = [];
+                ns.emit('lobbyReset');
+            }
+        });
+
+        socket.on('startAuction', () => {
+            const p = players.find(x => x.id === socket.id);
+            if (p && p.isAdmin && gameStatus === 'lobby' && players.length >= 4) {
                 auctionQueue = [
                     ...shuffle(PLAYER_LIST.filter(x => x.position === 'GK')),
                     ...shuffle(PLAYER_LIST.filter(x => x.position === 'DEF')),
@@ -156,7 +173,7 @@ module.exports = (io) => {
 
         socket.on('bid', (amount) => {
             const p = players.find(x => x.id === socket.id);
-            if (!p || gameStatus !== 'active' || amount <= currentBid || amount % 5 !== 0) return;
+            if (!p || gameStatus !== 'active' || isPaused || amount <= currentBid || amount % 5 !== 0) return;
             if (p.name === currentBidder) return;
             const player = auctionQueue[currentIdx];
             if (p.positions[player.position] >= MAX_POS[player.position]) return;
@@ -166,6 +183,24 @@ module.exports = (io) => {
             currentBidder = p.name;
             timerEnd = Date.now() + 10000;
             broadcast();
+        });
+
+        socket.on('pause', () => {
+            const p = players.find(x => x.id === socket.id);
+            if (p && p.isAdmin && gameStatus === 'active' && !isPaused) {
+                isPaused = true;
+                timeLeftOnPause = Math.max(0, timerEnd - Date.now());
+                broadcast();
+            }
+        });
+
+        socket.on('resume', () => {
+            const p = players.find(x => x.id === socket.id);
+            if (p && p.isAdmin && gameStatus === 'active' && isPaused) {
+                isPaused = false;
+                timerEnd = Date.now() + timeLeftOnPause;
+                broadcast();
+            }
         });
 
         socket.on('dismiss', () => {
@@ -202,7 +237,7 @@ module.exports = (io) => {
     });
 
     setInterval(() => {
-        if (gameStatus === 'active' && Date.now() > timerEnd) {
+        if (gameStatus === 'active' && !isPaused && Date.now() > timerEnd) {
             if (currentBidder) {
                 const winner = players.find(x => x.name === currentBidder);
                 const player = auctionQueue[currentIdx];
