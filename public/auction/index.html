@@ -3,304 +3,390 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mejores Amigos | Live Auction</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>Mejores Amigos — Live Auction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { min-height: 100vh; background: linear-gradient(135deg, #0b1120 0%, #1a2c3e 100%); color: #fff; overflow-x: hidden; }
+        :root {
+            --bg: #07070a;
+            --surface: #0f0f18;
+            --acc-gold: #f5b942;
+            --acc-red: #f87171;
+            --acc-green: #4ade80;
+            --text: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+            --border: rgba(255, 255, 255, 0.08);
+        }
 
-        .bg-animation { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
-        .bg-animation span { position: absolute; display: block; width: 20px; height: 20px; background: rgba(255, 215, 0, 0.05); border-radius: 50%; animation: float 15s infinite; pointer-events: none; }
-        @keyframes float { 0% { transform: translateY(100vh) scale(0); opacity: 0; } 50% { opacity: 0.3; } 100% { transform: translateY(-100px) scale(1); opacity: 0; } }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'DM Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text); overflow-x: hidden; min-height: 100vh; }
 
-        .app { max-width: 1400px; margin: 0 auto; padding: 20px; opacity: 0; animation: fadeIn 0.5s ease forwards; }
-        @keyframes fadeIn { to { opacity: 1; } }
+        .header {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: rgba(15,15,24,0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo { display: flex; align-items: center; gap: 12px; font-family: 'Syne'; font-weight: 800; font-size: 20px; text-decoration: none; color: inherit; }
+        .logo img { width: 40px; height: 40px; border-radius: 10px; }
 
-        .header { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 20px; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); }
-        .logo { display: flex; align-items: center; gap: 15px; }
-        .logo-circle { width: 50px; height: 50px; background: linear-gradient(135deg, #ffd700, #ffa500); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #0b1120; font-family: 'Syne'; }
-        .logo-text h1 { font-family: 'Syne'; font-size: 1.5rem; background: linear-gradient(135deg, #fff, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .container { max-width: 1400px; margin: 40px auto; padding: 0 40px; display: grid; grid-template-columns: 1fr 350px; gap: 40px; }
 
-        .status { background: rgba(0, 0, 0, 0.3); padding: 8px 20px; border-radius: 40px; border: 1px solid rgba(255, 215, 0, 0.3); display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ffd700; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } }
+        .auction-card {
+            background: var(--surface);
+            border-radius: 32px;
+            border: 1px solid var(--border);
+            padding: 50px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
 
-        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
+        .pos-badge {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 1px;
+            color: var(--acc-gold);
+            border: 1px solid rgba(245, 185, 66, 0.2);
+            margin-bottom: 24px;
+        }
 
-        .player-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 30px; padding: 40px; box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden; text-align: center; }
-        .player-card::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,215,0,0.05) 0%, transparent 70%); animation: rotate 20s linear infinite; }
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        #playerName { font-family: 'Syne'; font-size: 56px; font-weight: 800; letter-spacing: -2px; margin-bottom: 40px; }
 
-        .player-header { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; position: relative; z-index: 2; text-align: left; }
-        .player-image { width: 120px; height: 120px; border-radius: 50%; border: 3px solid #ffd700; object-fit: cover; }
-        .goat-badge { background: linear-gradient(135deg, #ffd700, #ffa500); padding: 4px 12px; border-radius: 20px; color: #000; font-weight: 800; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; }
+        .display-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; width: 100%; margin-bottom: 40px; }
+        .disp-box { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 24px; padding: 30px; }
+        .disp-label { font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .disp-val { font-size: 38px; font-weight: 800; font-family: 'Syne'; }
 
-        .pos-badge { background: rgba(255, 215, 0, 0.2); color: #ffd700; padding: 6px 20px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; display: inline-block; }
-        .player-name { font-family: 'Syne'; font-size: 3rem; font-weight: 800; background: linear-gradient(to bottom, #fff, #cbd5e1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        #timerDisplay { color: var(--acc-gold); transition: 0.3s; }
+        #timerDisplay.urgent { color: var(--acc-red); transform: scale(1.1); }
 
-        .bid-display { background: rgba(0,0,0,0.3); border-radius: 20px; padding: 30px; margin: 30px 0; border: 1px solid rgba(255,215,0,0.2); position: relative; z-index: 2; }
-        .current-bid { font-family: 'Syne'; font-size: 4.5rem; font-weight: 900; color: #ffd700; text-shadow: 0 0 30px rgba(255, 215, 0, 0.4); }
-        .timer-box { font-size: 2.2rem; font-weight: 800; color: #fff; background: rgba(0,0,0,0.5); padding: 10px 30px; border-radius: 40px; display: inline-block; margin: 15px 0; }
-        .timer-warning { color: #ffd700; }
-        .timer-danger { color: #f87171; animation: timerPulse 0.5s infinite; }
-        @keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .highest-bidder { color: rgba(255,255,255,0.6); font-size: 1.2rem; }
-        .highest-bidder span { color: #ffd700; font-weight: 700; }
+        .bid-controls { width: 100%; display: grid; grid-template-columns: 1fr 200px; gap: 20px; }
+        .btn-bid {
+            background: var(--acc-gold);
+            color: #000;
+            border: none;
+            border-radius: 20px;
+            padding: 24px;
+            font-family: 'Syne';
+            font-weight: 800;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-bid:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(245, 185, 66, 0.3); }
+        .btn-bid:disabled { background: #333; color: #666; cursor: not-allowed; }
 
-        .bid-btn { background: linear-gradient(135deg, #ffd700, #ffa500); border: none; color: #0b1120; font-size: 1.5rem; font-weight: 800; padding: 20px; border-radius: 16px; cursor: pointer; transition: 0.3s; width: 100%; position: relative; z-index: 2; box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3); }
-        .bid-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(255, 215, 0, 0.5); }
-        .bid-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-custom {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-custom:hover { background: rgba(255,255,255,0.1); }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 25px; }
-        .stat-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 20px; padding: 15px; text-align: center; }
-        .stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 5px; }
-        .stat-value { font-size: 1.4rem; font-weight: 800; color: #ffd700; }
+        .sidebar { display: flex; flex-direction: column; gap: 24px; }
+        .side-box { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 24px; }
+        .side-title { font-family: 'Syne'; font-weight: 800; font-size: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: var(--text-dim); }
 
-        .sidebar-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 25px; padding: 25px; margin-bottom: 25px; }
-        .card-title { font-size: 1.1rem; font-weight: 700; color: #ffd700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,215,0,0.1); padding-bottom: 10px; }
+        .stat-line { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .stat-line:last-child { border: none; }
+        .stat-name { font-weight: 500; }
+        .stat-val { font-weight: 700; color: var(--acc-gold); }
 
-        .p-list { max-height: 250px; overflow-y: auto; }
-        .p-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,215,0,0.1); padding: 12px 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .participant { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+        .p-info { display: flex; align-items: center; gap: 10px; }
+        .p-status { width: 8px; height: 8px; border-radius: 50%; background: #444; }
+        .p-status.online { background: var(--acc-green); box-shadow: 0 0 10px var(--acc-green); }
 
-        .admin-btn { width: 100%; padding: 12px; margin-bottom: 10px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-dismiss { background: #f87171; color: #fff; }
-        .btn-end { background: #4e4d60; color: #fff; }
+        /* Admin Panel */
+        .admin-panel { border-color: var(--acc-red); }
+        .admin-btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: 800; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+        .btn-pause { background: #6366f1; color: #fff; }
+        .btn-dismiss { background: var(--acc-red); color: #fff; display: none; }
+        .btn-end { background: #000; color: #fff; border: 1px solid #333; }
 
-        /* Notification overlay */
-        #bidNotification { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); background: rgba(15, 23, 42, 0.95); padding: 30px 60px; border-radius: 24px; font-family: 'Syne'; font-size: 2rem; font-weight: 900; z-index: 2000; border: 3px solid #ffd700; color: #fff; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.8); pointer-events: none; transition: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        #bidNotification.show { transform: translate(-50%, -50%) scale(1); }
+        /* Toast / Notification */
+        #toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #fff;
+            color: #000;
+            padding: 16px 32px;
+            border-radius: 100px;
+            font-weight: 800;
+            z-index: 1000;
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+        #toast.success { background: var(--acc-green); }
+        #toast.error { background: var(--acc-red); color: #fff; }
 
-        /* Modals */
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 3000; }
-        .modal.active { display: flex; }
-        .modal-content { background: #0f172a; border: 1px solid #ffd700; border-radius: 30px; padding: 30px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; position: relative; }
-        .close-btn { position: absolute; top: 20px; right: 20px; background: none; border: none; color: #ffd700; font-size: 2rem; cursor: pointer; }
+        /* Modal */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; }
+        .modal-content { background: var(--surface); border: 1px solid var(--border); padding: 40px; border-radius: 32px; width: 100%; max-width: 600px; max-height: 80vh; overflow-y: auto; }
 
-        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+        #pauseOverlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; padding: 20px; }
+            #playerName { font-size: 38px; }
+        }
     </style>
 </head>
 <body>
-    <div class="bg-animation" id="bgAnim"></div>
-    <div id="bidNotification">NEW BID!</div>
-
-    <div class="app">
-        <div id="pauseBanner" style="display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#ffd700; color:#000; padding:10px 40px; border-radius:40px; font-weight:900; z-index:4000; box-shadow:0 10px 30px rgba(0,0,0,0.5);">AUCTION PAUSED BY ADMIN</div>
-        <header class="header">
-            <div class="logo">
-                <div class="logo-circle">MA</div>
-                <div class="logo-text"><h1>MEJORES AMIGOS</h1></div>
-            </div>
-            <div class="status">
-                <span class="status-dot"></span>
-                <span id="statusText">LIVE AUCTION</span>
-            </div>
-        </header>
-
-        <div class="main-grid">
-            <div class="left-col">
-                <div class="player-card">
-                    <div class="player-header">
-                        <img src="https://ui-avatars.com/api/?background=random&name=User" class="player-image" id="playerImage">
-                        <div>
-                            <div class="pos-badge" id="posBadge">GK</div>
-                            <h2 class="player-name"><span id="playerName">Connecting...</span><span id="goatBadge" class="goat-badge" style="display:none;"><i class="fas fa-crown"></i> GOAT</span></h2>
-                        </div>
-                    </div>
-
-                    <div class="bid-display">
-                        <div class="current-bid" id="currentBidDisplay">₹5 Lakh</div>
-                        <div class="timer-box" id="timerDisplay">10s</div>
-                        <div class="highest-bidder">Highest Bidder: <span id="highestBidderName">No bids yet</span></div>
-                    </div>
-
-                    <button class="bid-btn" id="mainBidBtn">PLACE BID</button>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card"><div class="stat-label">Budget Left</div><div class="stat-value" id="budgetDisplay">₹15.00 Cr</div></div>
-                    <div class="stat-card"><div class="stat-label">Squad Size</div><div class="stat-value" id="squadCount">0/18</div></div>
-                    <div class="stat-card"><div class="stat-label">GK</div><div class="stat-value" id="gkCount">0/3</div></div>
-                    <div class="stat-card"><div class="stat-label">DEF</div><div class="stat-value" id="defCount">0/5</div></div>
-                    <div class="stat-card"><div class="stat-label">MID</div><div class="stat-value" id="midCount">0/5</div></div>
-                    <div class="stat-card"><div class="stat-label">FWD</div><div class="stat-value" id="fwdCount">0/5</div></div>
-                </div>
-            </div>
-
-            <div class="right-col">
-                <div class="sidebar-card">
-                    <div class="card-title"><i class="fas fa-users"></i> Participants</div>
-                    <div class="p-list" id="participantsList"></div>
-                </div>
-
-                <div class="sidebar-card">
-                    <div class="card-title"><i class="fas fa-list"></i> My Team</div>
-                    <button class="admin-btn" style="background:rgba(255,215,0,0.1); color:#ffd700; border:1px solid #ffd700;" onclick="socket.emit('getMyTeam'); openModal('myTeamModal')">View My Squad</button>
-                    <button class="admin-btn" style="background:rgba(255,255,255,0.05); color:#fff;" onclick="socket.emit('getUpcoming')">Upcoming Players</button>
-                </div>
-
-                <div id="adminPanel" class="sidebar-card" style="display:none; border-color:#f87171;">
-                    <div class="card-title" style="color:#f87171;"><i class="fas fa-crown"></i> Admin controls</div>
-                    <button class="admin-btn" id="pauseBtn" style="background:#f5b942; color:#000;"><i class="fas fa-pause"></i> PAUSE</button>
-                    <button class="admin-btn btn-dismiss" id="dismissBtn">DISMISS (No Bids)</button>
-                    <button class="admin-btn btn-end" id="endBtn">EMERGENCY END</button>
-                </div>
-            </div>
-        </div>
+    <div id="pauseOverlay">
+        <h1 style="font-family:'Syne'; font-size:4rem; color:var(--acc-gold);">PAUSED</h1>
+        <p style="color:var(--text-dim);">Waiting for admin to resume...</p>
     </div>
 
-    <div class="modal" id="myTeamModal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closeModal('myTeamModal')">&times;</button>
-            <h2 style="font-family:'Syne'; color:#ffd700; margin-bottom:20px;">My Squad</h2>
-            <div id="myTeamList"></div>
-        </div>
-    </div>
+    <div id="toast"></div>
 
-    <div class="modal" id="upcomingModal">
+    <header class="header">
+        <a href="/hub.html" class="logo">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
+            <span>Mejores Amigos</span>
+        </a>
+        <div id="self-stats" style="display:flex; gap:20px; font-weight:700;">
+            <span id="u-name">...</span>
+            <span id="u-budget" style="color:var(--acc-gold);">₹15.00 Cr</span>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="main-auction">
+            <div class="auction-card">
+                <div class="pos-badge" id="playerPos">POSITION</div>
+                <h1 id="playerName">WAITING...</h1>
+
+                <div class="display-grid">
+                    <div class="disp-box">
+                        <div class="disp-label">Highest Bid</div>
+                        <div class="disp-val" id="currentBid">₹5 Lakh</div>
+                        <div style="font-size:14px; color:var(--text-dim); margin-top:5px;" id="bidderName">No bids yet</div>
+                    </div>
+                    <div class="disp-box">
+                        <div class="disp-label">Time Remaining</div>
+                        <div class="disp-val" id="timerDisplay">10s</div>
+                    </div>
+                </div>
+
+                <div class="bid-controls">
+                    <button class="btn-bid" id="bidBtn" disabled>PLACE BID</button>
+                    <button class="btn-custom" onclick="openCustomBid()">CUSTOM</button>
+                </div>
+            </div>
+        </section>
+
+        <aside class="sidebar">
+            <div class="side-box">
+                <div class="side-title"><i class="fas fa-chart-pie"></i> My Squad Stats</div>
+                <div class="stat-line"><span>Total Players</span><span class="stat-val" id="squadSize">0/18</span></div>
+                <div class="stat-line"><span>Goalkeepers</span><span class="stat-val" id="gkCount">0/3</span></div>
+                <div class="stat-line"><span>Defenders</span><span class="stat-val" id="defCount">0/5</span></div>
+                <div class="stat-line"><span>Midfielders</span><span class="stat-val" id="midCount">0/5</span></div>
+                <div class="stat-line"><span>Forwards</span><span class="stat-val" id="fwdCount">0/5</span></div>
+                <button class="admin-btn" style="background:rgba(255,255,255,0.05); color:#fff; margin-top:15px;" onclick="socket.emit('getMyTeam')">View My Team</button>
+            </div>
+
+            <div class="side-box">
+                <div class="side-title"><i class="fas fa-users"></i> Participants</div>
+                <div id="participantsList"></div>
+            </div>
+
+            <div id="adminArea" class="side-box admin-panel" style="display:none;">
+                <div class="side-title" style="color:var(--acc-red);"><i class="fas fa-crown"></i> Admin Controls</div>
+                <button class="admin-btn btn-pause" id="pauseBtn">PAUSE AUCTION</button>
+                <button class="admin-btn btn-dismiss" id="dismissBtn">DISMISS (5s LEFT)</button>
+                <button class="admin-btn btn-end" onclick="confirmEnd()">EMERGENCY END</button>
+            </div>
+        </aside>
+    </main>
+
+    <div class="modal" id="genericModal">
         <div class="modal-content">
-            <button class="close-btn" onclick="closeModal('upcomingModal')">&times;</button>
-            <h2 style="font-family:'Syne'; color:#ffd700; margin-bottom:20px;">Next 10 Players</h2>
-            <div id="upcomingList" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>
+            <h2 id="modalTitle" style="font-family:'Syne'; margin-bottom:20px;"></h2>
+            <div id="modalBody"></div>
+            <button class="admin-btn" style="margin-top:20px; background:#333; color:#fff;" onclick="closeModal()">CLOSE</button>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const bg = document.getElementById('bgAnim');
-        for(let i=0; i<30; i++) {
-            const s = document.createElement('span');
-            const size = Math.random()*30+10;
-            s.style.width = size+'px'; s.style.height = size+'px';
-            s.style.left = Math.random()*100+'%';
-            s.style.animationDelay = Math.random()*15+'s';
-            bg.appendChild(s);
-        }
-
         const socket = io('/auction');
         const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        if(!user) location.href='/';
+        if(!user) location.href = '/';
 
-        const GOATS = ['Messi', 'Ronaldo', 'Pele', 'Maradona', 'Zidane', 'Maldini', 'Ramos', 'Iniesta', 'Henry'];
-
-        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
-
-        if(user.isAuctionAdmin) document.getElementById('adminPanel').style.display = 'block';
-
-        socket.on('stateUpdate', (state) => {
-            if(state.gameStatus === 'finished') { location.href='/auction/results.html'; return; }
-            document.getElementById('pauseBanner').style.display = state.isPaused ? 'block' : 'none';
-            if(user.isAuctionAdmin) {
-                const pb = document.getElementById('pauseBtn');
-                pb.innerHTML = state.isPaused ? '<i class="fas fa-play"></i> RESUME' : '<i class="fas fa-pause"></i> PAUSE';
-                pb.onclick = () => socket.emit(state.isPaused ? 'resume' : 'pause');
-            }
-            document.getElementById('mainBidBtn').disabled = (state.currentBidder === user.name || state.isPaused);
-            if(!state.currentPlayer) return;
-
-            const player = state.currentPlayer;
-            document.getElementById('playerName').textContent = player.name;
-            document.getElementById('posBadge').textContent = player.position;
-            document.getElementById('playerImage').src = `https://ui-avatars.com/api/?background=random&name=${player.name}`;
-
-            const isGoat = GOATS.some(g => player.name.includes(g));
-            document.getElementById('goatBadge').style.display = isGoat ? 'inline-flex' : 'none';
-
-            // Bid update with anim
-            const oldBid = parseInt(document.getElementById('currentBidDisplay').textContent.replace(/[^0-9]/g, ''));
-            if(state.currentBid > 5 && state.currentBid !== oldBid) {
-                const notif = document.getElementById('bidNotification');
-                notif.textContent = `${state.currentBidder} BID ${formatMoney(state.currentBid)}!`;
-                notif.classList.add('show');
-                setTimeout(() => notif.classList.remove('show'), 2000);
-            }
-
-            document.getElementById('currentBidDisplay').textContent = formatMoney(state.currentBid);
-            document.getElementById('highestBidderName').textContent = state.currentBidder || 'No bids yet';
-
-            const nextBid = state.currentBid + 5;
-            const bidBtn = document.getElementById('mainBidBtn');
-            bidBtn.textContent = `BID ${formatMoney(nextBid)}`;
-            bidBtn.onclick = () => socket.emit('bid', nextBid);
-            bidBtn.disabled = (state.currentBidder === user.name);
-
-            // Participants
-            document.getElementById('participantsList').innerHTML = state.players.map(p => `
-                <div class="p-item">
-                    <span>${p.isAdmin ? '👑 ' : ''}${p.name}</span>
-                    <span style="color:#ffd700; font-weight:800;">${formatMoney(p.budget)}</span>
-                </div>
-            `).join('');
-
-            // My Stats
-            const me = state.players.find(x => x.name === user.name);
-            if(me) {
-                document.getElementById('budgetDisplay').textContent = formatMoney(me.budget);
-                document.getElementById('squadCount').textContent = me.teamSize + '/18';
-                if(me.positions) {
-                    document.getElementById('gkCount').textContent = me.positions.GK + '/3';
-                    document.getElementById('defCount').textContent = me.positions.DEF + '/5';
-                    document.getElementById('midCount').textContent = me.positions.MID + '/5';
-                    document.getElementById('fwdCount').textContent = me.positions.FWD + '/5';
-                }
-            }
-
-            window.isPaused = state.isPaused; updateTimer(state.timerEnd);
-
-            // Dismiss button visibility
-            if(user.isAuctionAdmin) {
-                const rem = Math.floor((state.timerEnd - Date.now()) / 1000);
-                document.getElementById('dismissBtn').style.display = (!state.currentBidder && rem <= 5) ? 'block' : 'none';
-            }
-        });
-
-        socket.on('upcomingPlayers', (list) => {
-            const container = document.getElementById('upcomingList');
-            container.innerHTML = list.map(p => `
-                <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; text-align:center;">
-                    <div style="font-size:0.7rem; color:#ffd700;">${p.position}</div>
-                    <div style="font-weight:700;">${p.name}</div>
-                </div>
-            `).join('');
-            openModal('upcomingModal');
-        });
-
-        socket.on('myTeamData', (team) => {
-            const container = document.getElementById('myTeamList');
-            container.innerHTML = team.map(p => `
-                <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid rgba(255,255,255,0.05);">
-                    <span>${p.name} (${p.position})</span>
-                    <span style="color:#ffd700;">${formatMoney(p.price)}</span>
-                </div>
-            `).join('');
-        });
+        let lastTimerEnd = 0;
+        let timerInterval = null;
 
         function formatMoney(lakhs) {
-            if(lakhs < 100) return `₹${lakhs} Lakh`;
+            if (lakhs < 100) return `₹${lakhs} Lakh`;
             return `₹${(lakhs/100).toFixed(2)} Crore`;
         }
 
-        function updateTimer(end) {
-            if(window.timerInt) clearInterval(window.timerInt);
-            window.timerInt = setInterval(() => {
-                if(window.isPaused) return; const rem = Math.max(0, Math.floor((end - Date.now()) / 1000));
-                const t = document.getElementById('timerDisplay');
-                t.textContent = rem + 's';
-                t.className = 'timer-box';
-                if(rem <= 3) t.classList.add('timer-danger');
-                else if(rem <= 5) t.classList.add('timer-warning');
-                if(rem === 0) clearInterval(window.timerInt);
-            }, 1000);
+        function showToast(msg, type='info') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'show ' + type;
+            setTimeout(() => t.classList.remove('show'), 3000);
         }
 
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        socket.emit('joinAuction', { name: user.name, isAdmin: user.isAdmin });
 
-        document.getElementById('dismissBtn').onclick = () => { socket.emit('dismiss'); };
-        document.getElementById('endBtn').onclick = () => {
-            const val = prompt('Type "END" to confirm emergency end:');
-            if(val === 'END') socket.emit('emergencyEnd', 'END');
-        };
+        socket.on('notification', (data) => {
+            showToast(data.message, data.type);
+        });
+
+        socket.on('stateUpdate', (state) => {
+            if (state.gameStatus === 'finished') {
+                location.href = '/auction/results.html';
+                return;
+            }
+
+            document.getElementById('pauseOverlay').style.display = state.isPaused ? 'flex' : 'none';
+
+            if (user.isAdmin) {
+                document.getElementById('adminArea').style.display = 'block';
+                const pBtn = document.getElementById('pauseBtn');
+                pBtn.textContent = state.isPaused ? 'RESUME AUCTION' : 'PAUSE AUCTION';
+                pBtn.onclick = () => socket.emit(state.isPaused ? 'resume' : 'pause');
+            }
+
+            const player = state.currentPlayer;
+            if (player) {
+                document.getElementById('playerName').textContent = player.name.toUpperCase();
+                document.getElementById('playerPos').textContent = player.position;
+            }
+
+            document.getElementById('currentBid').textContent = formatMoney(state.currentBid);
+            document.getElementById('bidderName').textContent = state.currentBidder ? `Highest Bidder: ${state.currentBidder}` : 'No bids yet';
+
+            const nextBid = state.currentBid + 5;
+            const bidBtn = document.getElementById('bidBtn');
+            bidBtn.textContent = `BID ${formatMoney(nextBid)}`;
+            bidBtn.disabled = (state.currentBidder === user.name || state.isPaused);
+            bidBtn.onclick = () => socket.emit('bid', nextBid);
+
+            // Participants
+            const pList = document.getElementById('participantsList');
+            pList.innerHTML = state.players.map(p => `
+                <div class="participant">
+                    <div class="p-info">
+                        <div class="p-status ${p.connected ? 'online' : ''}"></div>
+                        <span style="font-weight:700;">${p.isAdmin ? '👑 ' : ''}${p.name}</span>
+                    </div>
+                    <span style="color:var(--acc-gold); font-weight:800;">${formatMoney(p.budget)}</span>
+                </div>
+            `).join('');
+
+            // Self stats
+            const me = state.players.find(x => x.name === user.name);
+            if (me) {
+                document.getElementById('u-name').textContent = me.name + (me.isAdmin ? ' 👑' : '');
+                document.getElementById('u-budget').textContent = formatMoney(me.budget);
+                document.getElementById('squadSize').textContent = me.teamSize + '/18';
+                document.getElementById('gkCount').textContent = me.positions.GK + '/3';
+                document.getElementById('defCount').textContent = me.positions.DEF + '/5';
+                document.getElementById('midCount').textContent = me.positions.MID + '/5';
+                document.getElementById('fwdCount').textContent = me.positions.FWD + '/5';
+            }
+
+            // Timer synchronization
+            if (state.timerEnd !== lastTimerEnd) {
+                lastTimerEnd = state.timerEnd;
+                startTimer(state.timerEnd, state.isPaused);
+            }
+
+            // Dismiss logic
+            if (user.isAdmin) {
+                const rem = Math.floor((state.timerEnd - Date.now()) / 1000);
+                const dBtn = document.getElementById('dismissBtn');
+                if (!state.currentBidder && rem <= 5 && rem > 0) {
+                    dBtn.style.display = 'block';
+                    dBtn.onclick = () => socket.emit('dismiss');
+                } else {
+                    dBtn.style.display = 'none';
+                }
+            }
+        });
+
+        function startTimer(end, paused) {
+            if (timerInterval) clearInterval(timerInterval);
+            if (paused) {
+                const rem = Math.max(0, Math.floor((end - Date.now()) / 1000));
+                document.getElementById('timerDisplay').textContent = rem + 's';
+                return;
+            }
+
+            timerInterval = setInterval(() => {
+                const rem = Math.max(0, Math.floor((end - Date.now()) / 1000));
+                const display = document.getElementById('timerDisplay');
+                display.textContent = rem + 's';
+
+                if (rem <= 3) display.classList.add('urgent');
+                else display.classList.remove('urgent');
+
+                if (rem <= 0) clearInterval(timerInterval);
+            }, 100); // 100ms for smoother visual feel
+        }
+
+        socket.on('myTeamData', (team) => {
+            const body = team.length ? `
+                <table style="width:100%; border-collapse:collapse;">
+                    ${team.map(p => `<tr style="border-bottom:1px solid #222;"><td style="padding:10px;">${p.name}</td><td style="color:var(--acc-gold); text-align:right;">${formatMoney(p.price)}</td></tr>`).join('')}
+                </table>
+            ` : '<p>No players yet.</p>';
+            openModal('My Squad', body);
+        });
+
+        function openModal(title, body) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = body;
+            document.getElementById('genericModal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('genericModal').style.display = 'none'; }
+
+        function openCustomBid() {
+            const val = prompt("Enter custom bid amount (must be multiple of 5 Lakhs):");
+            const amt = parseInt(val);
+            if (!isNaN(amt) && amt % 5 === 0) {
+                socket.emit('bid', amt);
+            } else if (val !== null) {
+                alert("Invalid amount. Must be a multiple of 5.");
+            }
+        }
+
+        function confirmEnd() {
+            if (prompt('Type "END" to confirm emergency auction termination:') === 'END') {
+                socket.emit('emergencyEnd', 'END');
+            }
+        }
     </script>
 </body>
 </html>

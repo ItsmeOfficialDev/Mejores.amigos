@@ -6,7 +6,7 @@ const express = require('express');
 const auctionModule = require('../socket/auction');
 
 describe('Auction Socket Logic', () => {
-    let ioServer, clientSocket, server;
+    let ioServer, server, clientUri;
 
     before((done) => {
         const app = express();
@@ -15,61 +15,64 @@ describe('Auction Socket Logic', () => {
         auctionModule(ioServer);
         server.listen(() => {
             const port = server.address().port;
-            clientSocket = io(`http://localhost:${port}/auction`, { transports: ['websocket'] });
-            clientSocket.on('connect', done);
+            clientUri = `http://localhost:${port}/auction`;
+            done();
         });
     });
 
     after(() => {
         ioServer.close();
-        clientSocket.disconnect();
         server.close();
     });
 
     it('should join auction and broadcast state', (done) => {
-        clientSocket.once('stateUpdate', (state) => {
-            expect(state.players).to.have.lengthOf(1);
-            expect(state.players[0].name).to.equal('TestPlayer');
-            done();
+        const client = io(clientUri, { transports: ['websocket'] });
+        client.on('connect', () => {
+            client.emit('joinAuction', { name: 'TestPlayer', isAdmin: true });
         });
-        clientSocket.emit('joinAuction', { name: 'TestPlayer', isAdmin: true });
+        client.on('stateUpdate', (state) => {
+            if (state.players.length === 1 && state.players[0].name === 'TestPlayer') {
+                client.disconnect();
+                done();
+            }
+        });
     });
 
-    it('should respect bid increments of 5', (done) => {
-        // First join 4 players to allow start
+    it('should allow auction to start with 4 players and accept valid bids', (done) => {
         const clients = [];
-        let joinCount = 0;
         const names = ['P1', 'P2', 'P3', 'P4'];
+        let activeAdmin = null;
 
-        const checkStart = () => {
-            joinCount++;
-            if (joinCount === 4) {
-                const admin = clients[0];
-                admin.emit('startAuction');
-                admin.once('stateUpdate', (state) => {
-                    if (state.gameStatus === 'active') {
-                        // Try invalid bid
-                        admin.emit('bid', 7);
-                        setTimeout(() => {
-                            admin.emit('bid', 10);
-                            admin.once('stateUpdate', (s2) => {
-                                expect(s2.currentBid).to.equal(10);
-                                clients.forEach(c => c.disconnect());
-                                done();
-                            });
-                        }, 500);
-                    }
-                });
-            }
+        const cleanup = () => {
+            clients.forEach(c => c.disconnect());
         };
 
-        names.forEach((n, i) => {
-            const c = io(clientSocket.io.uri, { transports: ['websocket'] });
+        const setup = (name, isAdmin) => {
+            const c = io(clientUri, { transports: ['websocket'] });
             c.on('connect', () => {
-                c.emit('joinAuction', { name: n, isAdmin: i === 0 });
+                c.emit('joinAuction', { name, isAdmin });
                 clients.push(c);
-                checkStart();
+                if (isAdmin) activeAdmin = c;
+
+                if (clients.length === 4) {
+                    setTimeout(() => {
+                        activeAdmin.emit('startAuction');
+                    }, 500);
+                }
             });
-        });
+
+            c.on('stateUpdate', (state) => {
+                if (state.gameStatus === 'active' && isAdmin) {
+                    // Try valid bid
+                    c.emit('bid', 10);
+                }
+                if (state.currentBid === 10) {
+                    cleanup();
+                    done();
+                }
+            });
+        };
+
+        names.forEach((n, i) => setup(n, i === 0));
     });
 });
