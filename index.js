@@ -46,7 +46,7 @@ const sessionOptions = {
 };
 
 if (process.env.MONGODB_URI) {
-    sessionOptions.store = MongoStore.create({ mongoUrl: process.env.MONGODB_URI });
+    sessionOptions.store = MongoStore.MongoStore.create({ mongoUrl: process.env.MONGODB_URI });
 }
 
 const sessionMiddleware = session(sessionOptions);
