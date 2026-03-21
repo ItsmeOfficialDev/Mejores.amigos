@@ -2,47 +2,92 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mejores Amigos | Lobby</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mejores Amigos — Auction Lobby</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { min-height: 100vh; background: linear-gradient(135deg, #0b1120 0%, #1a2c3e 100%); color: #fff; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .box { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 215, 0, 0.2); padding: 50px; border-radius: 30px; width: 100%; max-width: 500px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-        h1 { font-family: 'Syne'; font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(135deg, #fff, #ffd700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        #status-msg { font-size: 0.9rem; color: rgba(255,255,255,0.5); margin-bottom: 30px; }
-        .p-list { margin-bottom: 30px; text-align: left; max-height: 300px; overflow-y: auto; }
-        .p-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,215,0,0.1); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .btn { width: 100%; padding: 18px; border-radius: 15px; border: none; font-family: 'Syne'; font-weight: 800; cursor: pointer; transition: 0.3s; font-size: 1.1rem; margin-top: 10px; }
-        .btn-start { background: linear-gradient(135deg, #4ade80, #22c55e); color: #0a0a0f; }
+        :root {
+            --bg: #ffffff;
+            --primary: #111111;
+            --accent: #f5b942;
+            --surface: #f8f9fa;
+            --text-dim: #666666;
+            --border: #e9ecef;
+            --green: #4ade80;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--primary); min-height: 100vh; display: flex; flex-direction: column; }
+
+        .header { padding: 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+        .logo img { width: 40px; height: 40px; border-radius: 10px; }
+        .logo span { font-family: 'Syne'; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+
+        .lobby-container { flex: 1; padding: 24px; display: flex; flex-direction: column; align-items: center; max-width: 600px; margin: 0 auto; width: 100%; }
+        h1 { font-family: 'Syne'; font-size: 28px; font-weight: 800; margin-bottom: 32px; text-align: center; }
+
+        .player-list { width: 100%; display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+        .player-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 16px 20px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.2s;
+        }
+        .player-card span { font-weight: 600; font-size: 15px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+
+        .controls { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+        .btn {
+            width: 100%; padding: 20px; border-radius: 16px; border: none; font-size: 16px; font-weight: 700;
+            cursor: pointer; transition: 0.3s;
+        }
+        .btn-start { background: var(--primary); color: #fff; display: none; }
         .btn-start:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-hub { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-exit { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
+        .btn-nuclear { background: #ff4d4d; color: #fff; display: none; }
+
+        #status-msg { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; text-align: center; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>Auction Lobby</h1>
+    <header class="header">
+        <a href="/hub.html" class="logo">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
+            <span>Mejores Amigos</span>
+        </a>
+    </header>
+
+    <main class="lobby-container">
+        <h1>Auction Room</h1>
         <div id="status-msg">Waiting for participants...</div>
-        <div class="p-list" id="player-list"></div>
-        <button class="btn btn-start" id="start-btn" style="display:none;" disabled>START AUCTION</button>
-        <button class="btn" id="reset-btn" style="display:none; background:#f87171; color:#fff; margin-top:10px;">RESET LOBBY</button>
-        <button class="btn btn-hub" onclick="location.href='/hub.html'">EXIT TO HUB</button>
-    </div>
+        <div class="player-list" id="p-list"></div>
+        <div class="controls">
+            <button class="btn btn-start" id="start-btn" disabled>START AUCTION</button>
+            <button class="btn btn-nuclear" id="reset-btn">RESET ROOM</button>
+            <button class="btn btn-exit" onclick="location.href='/hub.html'">EXIT ROOM</button>
+        </div>
+    </main>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        if(!user) location.href='/';
+        if(!user) location.href='/index.html';
 
         const socket = io('/auction');
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
 
         socket.on('stateUpdate', (state) => {
-            const list = document.getElementById('player-list');
+            const list = document.getElementById('p-list');
             list.innerHTML = state.players.map(p => `
-                <div class="p-item">
+                <div class="player-card">
                     <span>${p.isAdmin ? '👑 ' : ''}${p.name}</span>
-                    <span style="color:#4ade80; font-weight:700;">Connected</span>
+                    <div class="status-dot"></div>
                 </div>
             `).join('');
 
@@ -50,9 +95,9 @@
             if(user.isAuctionAdmin) {
                 startBtn.style.display = 'block';
                 startBtn.disabled = state.players.length < 4;
-                document.getElementById('status-msg').textContent = `Ready to start with ${state.players.length} players`;
+                document.getElementById('status-msg').textContent = `Room ready (${state.players.length}/8)`;
             } else {
-                document.getElementById('status-msg').textContent = `${state.players.length}/8 players joined. Waiting for admin...`;
+                document.getElementById('status-msg').textContent = `${state.players.length}/8 players joined.`;
             }
 
             if(state.gameStatus === 'active') location.href = '/auction/index.html';
@@ -62,9 +107,9 @@
         const resetBtn = document.getElementById('reset-btn');
         if(user.isAuctionAdmin) {
             resetBtn.style.display = 'block';
-            resetBtn.onclick = () => { if(confirm('RESET LOBBY? This will remove ALL players.')) socket.emit('resetLobby'); };
+            resetBtn.onclick = () => { if(confirm('RESET ALL? This will clear all players.')) socket.emit('resetLobby'); };
         }
-        socket.on('lobbyReset', () => { alert('Lobby reset by admin.'); location.href='/hub.html'; });
+        socket.on('lobbyReset', () => { alert('Room reset by admin.'); location.href='/hub.html'; });
     </script>
 </body>
 </html>

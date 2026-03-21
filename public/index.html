@@ -2,59 +2,120 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mejores Amigos — Entry</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@500&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mejores Amigos — Welcome</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #0a0a0f; --acc: #f5b942; --text: #f0eff8; --border: rgba(255,255,255,0.06); }
-        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(circle at 20% 10%, rgba(245,185,66,0.05), transparent 50%); z-index: -1; }
-        .box { background: #0f0f18; border: 1px solid var(--border); padding: 50px; border-radius: 30px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-        .logo { width: 90px; height: 90px; border-radius: 20px; margin-bottom: 30px; border: 1px solid var(--border); }
-        h1 { font-family: 'Syne'; font-size: 32px; margin-bottom: 40px; letter-spacing: -1px; }
-        input { width: 100%; background: #16161f; border: 1px solid var(--border); padding: 16px; border-radius: 15px; color: white; margin-bottom: 20px; outline: none; transition: 0.2s; font-size: 15px; }
-        input:focus { border-color: var(--acc); box-shadow: 0 0 20px rgba(245,185,66,0.1); }
-        .btn { width: 100%; background: var(--acc); color: #000; border: none; padding: 18px; border-radius: 15px; font-family: 'Syne'; font-weight: 800; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(245,185,66,0.25); }
-        #err { color: #f87171; font-size: 13px; margin-top: 15px; display: none; }
+        :root {
+            --bg: #ffffff;
+            --primary: #111111;
+            --accent: #f5b942;
+            --surface: #f8f9fa;
+            --text-dim: #666666;
+            --border: #e9ecef;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+        #loading-screen {
+            position: fixed; inset: 0; background: #fff; z-index: 9999; display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+        .loader-logo { width: 120px; animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.92); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+
+        .auth-container { width: 100%; max-width: 380px; padding: 40px 24px; text-align: center; opacity: 0; transform: translateY(20px); transition: 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .auth-container.show { opacity: 1; transform: translateY(0); }
+
+        .logo { width: 80px; height: 80px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        h1 { font-family: 'Syne'; font-size: 32px; font-weight: 800; margin-bottom: 40px; letter-spacing: -1px; }
+
+        input {
+            width: 100%; background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 16px;
+            font-size: 16px; margin-bottom: 16px; outline: none; transition: 0.3s; color: var(--primary);
+        }
+        input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(0,0,0,0.03); }
+
+        .btn {
+            width: 100%; background: var(--primary); color: #fff; border: none; padding: 20px; border-radius: 16px;
+            font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .btn:active { transform: scale(0.98); }
+
+        #err { color: #ff4d4d; font-size: 14px; margin-top: 16px; display: none; font-weight: 500; }
     </style>
 </head>
 <body>
-    <div class="box">
+    <div id="loading-screen">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="loader-logo">
+    </div>
+
+    <div class="auth-container" id="auth-box">
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo">
-        <h1>Mejores Amigos</h1>
+        <h1>Welcome</h1>
         <form id="login-form">
-            <input type="text" id="name" placeholder="Enter your name" required autocomplete="off">
+            <input type="text" id="name" placeholder="Full Name" required autocomplete="off">
             <input type="password" id="pass" placeholder="Admin Password" style="display:none;">
-            <button type="submit" class="btn">JOIN COMMUNITY</button>
+            <button type="submit" class="btn">CONTINUE</button>
             <div id="err"></div>
         </form>
     </div>
+
+    <script src="/js/auth.js"></script>
     <script>
         const ni = document.getElementById('name');
         const pi = document.getElementById('pass');
+        const authBox = document.getElementById('auth-box');
+        const loader = document.getElementById('loading-screen');
+
+        window.onload = async () => {
+            const user = await checkAuth();
+            if (user) {
+                window.location.href = '/hub.html';
+            } else {
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    authBox.classList.add('show');
+                }, 500);
+            }
+        };
+
         ni.oninput = () => {
             const val = ni.value.toLowerCase();
             pi.style.display = (val === 'admin' || val.endsWith('admin')) ? 'block' : 'none';
         };
+
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: ni.value, password: pi.value })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                localStorage.setItem('mejoresAmigosUser', JSON.stringify(data.user));
-                location.href = '/hub.html';
-            } else {
-                const err = document.getElementById('err');
-                err.textContent = data.error;
-                err.style.display = 'block';
+            const btn = e.target.querySelector('button');
+            btn.textContent = '...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: ni.value, password: pi.value })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('mejoresAmigosUser', JSON.stringify(data.user));
+                    window.location.href = '/hub.html';
+                } else {
+                    const err = document.getElementById('err');
+                    err.textContent = data.error;
+                    err.style.display = 'block';
+                    btn.textContent = 'CONTINUE';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                btn.textContent = 'CONTINUE';
+                btn.disabled = false;
             }
         };
-        if (localStorage.getItem('mejoresAmigosUser')) location.href = '/hub.html';
     </script>
 </body>
 </html>
