@@ -23,11 +23,20 @@ const Anime = require('./models/Anime');
 const Game = require('./models/Game');
 const BannedName = require('./models/BannedName');
 
+const MONGODB_URI = process.env.MONGODB_URI;
+const IS_PLACEHOLDER_URI = !MONGODB_URI || MONGODB_URI.includes('cluster.mongodb.net');
+
 // DB Connection
-if (process.env.MONGODB_URI) {
-    mongoose.connect(process.env.MONGODB_URI)
+if (MONGODB_URI && !IS_PLACEHOLDER_URI) {
+    mongoose.connect(MONGODB_URI)
       .then(() => console.log('Connected to MongoDB'))
-      .catch(err => console.error('DB Error:', err));
+      .catch(err => {
+          console.error('DB Connection Error (Process will continue without persistent DB):', err.message);
+      });
+} else if (IS_PLACEHOLDER_URI && MONGODB_URI) {
+    console.warn('MONGODB_URI appears to be a placeholder. Skipping persistent DB connection.');
+} else {
+    console.warn('No MONGODB_URI provided. Persistent DB is disabled.');
 }
 
 // Middleware
@@ -45,8 +54,14 @@ const sessionOptions = {
   }
 };
 
-if (process.env.MONGODB_URI) {
-    sessionOptions.store = MongoStore.MongoStore.create({ mongoUrl: process.env.MONGODB_URI });
+if (MONGODB_URI && !IS_PLACEHOLDER_URI) {
+    sessionOptions.store = MongoStore.MongoStore.create({
+        mongoUrl: MONGODB_URI,
+        collectionName: 'sessions',
+        ttl: 30 * 24 * 60 * 60 // 30 days
+    });
+} else {
+    console.warn('Using MemoryStore for sessions. This is NOT recommended for production.');
 }
 
 const sessionMiddleware = session(sessionOptions);
@@ -62,7 +77,7 @@ app.post('/api/login', async (req, res) => {
   const nameLower = name ? name.trim().toLowerCase() : '';
 
   if (nameLower === 'clearall') {
-    if (process.env.MONGODB_URI) {
+    if (mongoose.connection.readyState === 1) {
         await User.deleteMany({});
         await Game.deleteMany({});
     }
@@ -85,7 +100,7 @@ app.post('/api/login', async (req, res) => {
     finalName = finalName.charAt(0).toUpperCase() + finalName.slice(1);
 
     let user = null;
-    if (process.env.MONGODB_URI) {
+    if (mongoose.connection.readyState === 1) {
         user = await User.findOne({ nameLower: finalName.toLowerCase() });
         if (!user) {
           user = new User({
@@ -103,7 +118,7 @@ app.post('/api/login', async (req, res) => {
         await user.save();
         req.session.userId = user._id;
     } else {
-        req.session.userId = 'temp-id';
+        req.session.userId = 'temp-' + Date.now();
     }
 
     req.session.name = finalName;
@@ -111,6 +126,7 @@ app.post('/api/login', async (req, res) => {
 
     res.json({ user: { name: finalName, isAuctionAdmin: isMainAdmin, isAdmin: isMainAdmin } });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ error: 'Auth failed' });
   }
 });
@@ -146,8 +162,8 @@ const adminCheck = (req, res, next) => {
 
 app.get('/api/admin/stats', adminCheck, async (req, res) => {
   res.json({
-    userCount: process.env.MONGODB_URI ? await User.countDocuments() : 0,
-    animeCount: process.env.MONGODB_URI ? await Anime.countDocuments() : 0,
+    userCount: (mongoose.connection.readyState === 1) ? await User.countDocuments() : 0,
+    animeCount: (mongoose.connection.readyState === 1) ? await Anime.countDocuments() : 0,
     uptime: Math.floor((Date.now() - startTime) / 1000),
     connections: io.sockets.sockets.size
   });
@@ -155,18 +171,17 @@ app.get('/api/admin/stats', adminCheck, async (req, res) => {
 
 // --- ANIME API (ani-cli logic) ---
 app.get('/api/anime', async (req, res) => {
-    if (!process.env.MONGODB_URI) return res.json([{ title: 'Sample Anime', jikanId: 1, posterUrl: 'https://via.placeholder.com/200' }]);
+    if (mongoose.connection.readyState !== 1) return res.json([{ title: 'Sample Anime', jikanId: 1, posterUrl: 'https://via.placeholder.com/200' }]);
     res.json(await Anime.find({}, 'title posterUrl jikanId'));
 });
 
 app.get('/api/anime/:id', async (req, res) => {
-    if (!process.env.MONGODB_URI) return res.json({ title: 'Sample', synopsis: 'Demo' });
+    if (mongoose.connection.readyState !== 1) return res.json({ title: 'Sample', synopsis: 'Demo' });
     res.json(await Anime.findOne({ jikanId: req.params.id }));
 });
 
 app.get('/api/stream/resolve', async (req, res) => {
     const { title, ep } = req.query;
-    // Mock resolution mimicking ani-cli scraping
     res.json({
         url: "https://www.w3schools.com/html/mov_bbb.mp4",
         qualities: ['1080p', '720p', '480p']
@@ -180,5 +195,14 @@ require('./socket/auction')(io);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+
+// Global error handlers to prevent crash on DNS failures
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception thrown:', err);
+});
 
 module.exports = { app, server, io };
