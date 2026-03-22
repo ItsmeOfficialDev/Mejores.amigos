@@ -2,88 +2,128 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Platform Admin 👑</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — Mejores Amigos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/style.css">
     <style>
-        body { background: #0a0a0f; color: white; display: flex; height: 100vh; overflow: hidden; margin: 0; font-family: 'DM Sans'; }
-        .sidebar { width: 280px; background: #0f0f18; border-right: 1px solid rgba(255,255,255,0.06); padding: 40px 20px; }
-        .main { flex: 1; padding: 60px; overflow-y: auto; }
-        .nav-link { padding: 15px 20px; border-radius: 12px; cursor: pointer; color: #9896aa; margin-bottom: 5px; transition: 0.2s; }
-        .nav-link:hover { background: rgba(255,255,255,0.03); color: #fff; }
-        .nav-link.active { background: var(--accent-gold); color: #000; font-weight: bold; }
-        .card-stat { background: #0f0f18; border: 1px solid rgba(255,255,255,0.06); padding: 25px; border-radius: 20px; }
-        .val { font-family: 'Syne'; font-size: 32px; color: var(--accent-gold); }
-        table { width: 100%; border-collapse: collapse; margin-top: 30px; background: #0f0f18; border-radius: 20px; overflow: hidden; }
-        th, td { padding: 20px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .btn-kick { background: #f87171; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+        :root {
+            --bg: #FFFFFF;
+            --primary: #111111;
+            --accent: #F5B942;
+            --surface: #F9F9FB;
+            --border: #EEEEEE;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); color: var(--primary); min-height: 100vh; display: flex; }
+
+        .sidebar { width: 260px; border-right: 1px solid var(--border); padding: 32px; display: flex; flex-direction: column; gap: 40px; }
+        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+        .logo img { width: 32px; height: 32px; border-radius: 8px; }
+        .logo span { font-family: 'Syne'; font-size: 18px; font-weight: 800; }
+
+        .nav { display: flex; flex-direction: column; gap: 8px; }
+        .nav-item { padding: 12px 16px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; color: #666; display: flex; align-items: center; gap: 12px; }
+        .nav-item:hover { background: var(--surface); color: var(--primary); }
+        .nav-item.active { background: var(--primary); color: #fff; }
+
+        .main { flex: 1; padding: 48px; overflow-y: auto; }
+        h1 { font-family: 'Syne'; font-size: 32px; margin-bottom: 32px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 48px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 24px; }
+        .stat-lbl { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #999; margin-bottom: 8px; }
+        .stat-val { font-size: 24px; font-weight: 800; font-family: 'Syne'; }
+
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 24px; border: 1px solid var(--border); overflow: hidden; }
+        th { text-align: left; padding: 20px; background: var(--surface); font-size: 11px; text-transform: uppercase; color: #999; border-bottom: 1px solid var(--border); }
+        td { padding: 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 500; }
+
+        .status-pill { padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+        .status-pill.active { background: #E8F5E9; color: #2E7D32; }
+        .status-pill.banned { background: #FFEBEE; color: #C62828; }
+
+        .btn-action { background: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+        .btn-action:hover { background: var(--surface); }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <h1 style="font-family:'Syne'; margin-bottom: 40px;">Admin Panel 👑</h1>
-        <div class="nav-link active" onclick="switchS(event, 'dashboard')"><i class="fas fa-home"></i> Dashboard</div>
-        <div class="nav-link" onclick="switchS(event, 'users')"><i class="fas fa-users"></i> User Control</div>
-<div class="nav-link" onclick="syncAnime()"><i class="fas fa-sync"></i> Sync Anime</div>
-        <div class="nav-link" onclick="location.href='/hub.html'"><i class="fas fa-arrow-left"></i> Exit to Hub</div>
-    </div>
-    <div class="main">
-        <div id="dashboard" class="sec">
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-                <div class="card-stat">Total Users <div class="val" id="s-users">0</div></div>
-                <div class="card-stat">Anime Indexed <div class="val" id="s-anime">0</div></div>
-                <div class="card-stat">Active Now <div class="val" id="s-active">0</div></div>
-                <div class="card-stat">Uptime <div class="val" id="s-uptime">0h</div></div>
-            </div>
-        </div>
-        <div id="users" class="sec" style="display:none;">
-            <h2>User Management</h2>
-            <table>
-                <thead><tr><th>Name</th><th>Admin</th><th>IPs</th><th>Actions</th></tr></thead>
-                <tbody id="u-list"></tbody>
-            </table>
-        </div>
-    </div>
-    <script>
-        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        if (!user || !user.isAdmin) location.href = '/hub.html';
+    <aside class="sidebar">
+        <a href="/hub.html" class="logo">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
+            <span>Admin Control</span>
+        </a>
+        <nav class="nav">
+            <div class="nav-item active"><i class="fas fa-users"></i> Users</div>
+            <div class="nav-item"><i class="fas fa-chart-line"></i> Activity</div>
+            <div class="nav-item"><i class="fas fa-tv"></i> Anime Status</div>
+            <div class="nav-item"><i class="fas fa-server"></i> Server Stats</div>
+        </nav>
+    </aside>
 
-        async function loadStats() {
-            const r = await fetch('/api/admin/stats').then(x=>x.json());
-            document.getElementById('s-users').textContent = r.userCount;
-            document.getElementById('s-anime').textContent = r.animeCount;
-            document.getElementById('s-active').textContent = r.connections;
-            document.getElementById('s-uptime').textContent = Math.floor(r.uptime/3600) + 'h';
-        }
+    <main class="main">
+        <h1>Dashboard</h1>
 
-        async function loadUsers() {
-            const u = await fetch('/api/admin/users').then(x=>x.json());
-            document.getElementById('u-list').innerHTML = u.map(i => `
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-lbl">Total Users</div><div class="stat-val" id="s-users">0</div></div>
+            <div class="stat-card"><div class="stat-lbl">Active Sessions</div><div class="stat-val" id="s-sessions">0</div></div>
+            <div class="stat-card"><div class="stat-lbl">Anime Titles</div><div class="stat-val" id="s-anime">0</div></div>
+            <div class="stat-card"><div class="stat-lbl">Server Uptime</div><div class="stat-val" id="s-uptime">0h 0m</div></div>
+        </div>
+
+        <h3>User Management</h3>
+        <br>
+        <table>
+            <thead>
                 <tr>
-                    <td>${i.name}</td>
-                    <td>${i.isMainAppAdmin ? 'Main' : (i.isAuctionAdmin ? 'Auction' : 'None')}</td>
-                    <td>${i.ips.join(', ')}</td>
-                    <td><button class="btn-kick" onclick="kick('${i.name}')">Kick</button></td>
+                    <th>User</th>
+                    <th>Join Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                 </tr>
-            `).join('');
-        }
+            </thead>
+            <tbody id="user-table">
+                <!-- Rows injected here -->
+            </tbody>
+        </table>
+    </main>
 
-async function syncAnime() { alert('Syncing started in background...'); await fetch('/api/admin/sync-anime', {method:'POST'}); location.reload(); }
-        async function kick(name) {
-            await fetch('/api/admin/users/kick/' + encodeURIComponent(name), { method: 'POST' });
-            loadUsers();
-        }
+    <script src="/js/auth.js"></script>
+    <script>
+        async function loadAdmin() {
+            const user = await checkAuth();
+            if(!user || !user.isAdmin) { location.href = '/hub.html'; return; }
 
-        function switchS(e, id) {
-            document.querySelectorAll('.sec').forEach(s => s.style.display='none');
-            document.getElementById(id).style.display='block';
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            e.currentTarget.classList.add('active');
-            if (id === 'users') loadUsers();
-        }
+            try {
+                const res = await fetch('/api/admin/stats');
+                const data = await res.json();
+                document.getElementById('s-users').textContent = data.userCount;
+                document.getElementById('s-sessions').textContent = data.connections;
+                document.getElementById('s-anime').textContent = data.animeCount;
+                const m = Math.floor(data.uptime / 60);
+                document.getElementById('s-uptime').textContent = `${Math.floor(m/60)}h ${m%60}m`;
 
-        window.onload = loadStats;
+                // Mock Users List
+                const table = document.getElementById('user-table');
+                table.innerHTML = `
+                    <tr>
+                        <td>Ishan</td>
+                        <td>2024-03-10</td>
+                        <td><span class="status-pill active">Active</span></td>
+                        <td><button class="btn-action">Ban</button></td>
+                    </tr>
+                    <tr>
+                        <td>Sabari</td>
+                        <td>2024-03-12</td>
+                        <td><span class="status-pill active">Active</span></td>
+                        <td><button class="btn-action">Ban</button></td>
+                    </tr>
+                `;
+            } catch(e) {}
+        }
+        loadAdmin();
     </script>
 </body>
 </html>

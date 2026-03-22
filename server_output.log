@@ -1,2 +1,13 @@
-[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+> app@1.0.0 start
+> node index.js
+
+[dotenv@17.3.1] injecting env (3) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
 Server running on port 3000
+Session Check: undefined
+Session Check: undefined
+Session Check: undefined
+Terminated

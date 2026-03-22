@@ -3,198 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mejores Amigos — Auction Live</title>
+    <title>Live Auction — Mejores Amigos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         :root {
-            --bg: #ffffff;
+            --bg: #FFFFFF;
             --primary: #111111;
-            --accent: #f5b942;
-            --surface: #f8f9fa;
+            --accent: #F5B942;
+            --surface: #F9F9FB;
             --text-dim: #666666;
-            --border: #e9ecef;
-            --green: #4ade80;
-            --red: #ff4d4d;
+            --border: #EEEEEE;
+            --red: #FF4D4D;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--primary); min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--primary); min-height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-        .header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fff; }
+        .header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
         .logo img { width: 32px; height: 32px; border-radius: 8px; }
-        .logo span { font-family: 'Syne'; font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+        .logo span { font-family: 'Syne'; font-size: 18px; font-weight: 800; }
 
-        .self-budget { background: var(--surface); padding: 8px 16px; border-radius: 100px; font-weight: 700; font-size: 13px; border: 1px solid var(--border); }
+        .user-stats { display: flex; gap: 16px; align-items: center; }
+        .budget-pill { background: var(--surface); padding: 8px 16px; border-radius: 100px; font-weight: 700; font-size: 13px; border: 1px solid var(--border); color: var(--accent); }
 
-        .main-stage { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; position: relative; }
 
-        .player-card {
-            width: 100%; max-width: 400px; background: #fff; border-radius: 32px; border: 1px solid var(--border);
-            padding: 40px 24px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.05); position: relative;
+        #pause-banner {
+            position: fixed; top: 0; left: 0; width: 100%; background: var(--accent); color: #000; padding: 12px;
+            text-align: center; font-weight: 800; font-family: 'Syne'; z-index: 1000; display: none;
         }
 
-        .pos-chip {
+        .player-card {
+            width: 100%; max-width: 420px; background: #fff; border-radius: 40px; border: 1px solid var(--border);
+            padding: 48px 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.04);
+            animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .pos-tag {
             background: var(--surface); padding: 6px 16px; border-radius: 100px; font-size: 12px; font-weight: 800;
             letter-spacing: 1px; color: var(--accent); border: 1px solid var(--border); margin-bottom: 24px; display: inline-block;
         }
 
-        #p-name { font-family: 'Syne'; font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 32px; line-height: 1; }
+        #player-name { font-family: 'Syne'; font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 32px; line-height: 1.1; }
 
-        .bid-display { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; margin-bottom: 32px; }
-        .disp-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; text-align: center; }
-        .disp-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; letter-spacing: 0.5px; }
-        .disp-val { font-size: 20px; font-weight: 800; font-family: 'Outfit'; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; margin-bottom: 32px; }
+        .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 24px; text-align: center; }
+        .stat-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; letter-spacing: 0.5px; }
+        .stat-val { font-size: 22px; font-weight: 800; font-family: 'Inter'; }
 
         #timer { color: var(--primary); }
         #timer.urgent { color: var(--red); transform: scale(1.1); transition: 0.2s; }
 
-        .controls { width: 100%; max-width: 400px; display: grid; grid-template-columns: 1fr 100px; gap: 12px; margin-top: 24px; }
-        .btn { padding: 18px; border-radius: 16px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .btn-bid { background: var(--primary); color: #fff; }
-        .btn-bid:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-custom { background: var(--surface); color: var(--primary); border: 1px solid var(--border); }
+        .bid-controls { width: 100%; max-width: 420px; display: grid; grid-template-columns: 1fr 100px; gap: 12px; }
+        .btn { padding: 20px; border-radius: 20px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .btn-main { background: var(--primary); color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .btn-main:hover { transform: translateY(-3px); }
+        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-alt { background: var(--surface); color: var(--primary); border: 1px solid var(--border); }
 
-        #bidder-name { font-size: 12px; font-weight: 600; color: var(--text-dim); margin-top: 4px; display: block; }
+        #bidder-info { font-size: 13px; font-weight: 600; color: var(--text-dim); margin-top: 6px; display: block; }
 
-        /* Admin Tray */
-        .admin-tray { position: fixed; bottom: 0; inset: 0 0; background: #fff; border-top: 1px solid var(--border); padding: 16px; display: none; gap: 12px; }
-        .admin-btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; }
-        .btn-pause { background: #eee; color: #333; }
+        /* Admin Dashboard Bottom Tray */
+        .admin-tray {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid var(--border);
+            padding: 16px 24px; display: none; gap: 12px; z-index: 2000;
+        }
+        .admin-btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .btn-pause { background: var(--surface); color: var(--primary); border: 1px solid var(--border); }
         .btn-dismiss { background: var(--red); color: #fff; display: none; }
+        .btn-end { background: #000; color: #fff; }
 
         #toast {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px);
-            background: var(--primary); color: #fff; padding: 12px 24px; border-radius: 100px;
-            font-size: 14px; font-weight: 700; transition: 0.4s cubic-bezier(0.2, 1, 0.3, 1); z-index: 1000;
+            position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-100px);
+            background: var(--primary); color: #fff; padding: 14px 28px; border-radius: 100px;
+            font-size: 14px; font-weight: 700; transition: 0.5s cubic-bezier(0.2, 1, 0.3, 1); z-index: 3000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
-
-        #pause-overlay {
-            position: fixed; inset: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(4px);
-            z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center;
-        }
     </style>
 </head>
 <body>
-    <div id="pause-overlay">
-        <h1 style="font-family:'Syne'; font-size:32px;">PAUSED</h1>
-        <p style="color:var(--text-dim); margin-top:8px;">Waiting for admin to resume...</p>
-    </div>
-
+    <div id="pause-banner">AUCTION PAUSED BY ADMIN</div>
     <div id="toast"></div>
 
     <header class="header">
         <a href="/hub.html" class="logo">
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
-            <span>Live Auction</span>
+            <span>Mejores Amigos</span>
         </a>
-        <div class="self-budget" id="u-budget">₹15.00 Cr</div>
+        <div class="user-stats">
+            <div class="budget-pill" id="my-budget">₹15.00 Cr</div>
+        </div>
     </header>
 
     <main class="main-stage">
         <div class="player-card">
-            <div class="pos-chip" id="p-pos">GOALKEEPER</div>
-            <h1 id="p-name">LOADING...</h1>
+            <div class="pos-tag" id="player-pos">POSITION</div>
+            <h1 id="player-name">WAITING...</h1>
 
-            <div class="bid-display">
-                <div class="disp-box">
-                    <div class="disp-lbl">Current Bid</div>
-                    <div class="disp-val" id="curr-bid">₹5 Lakh</div>
-                    <div id="bidder-name">Starting Price</div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-lbl">Highest Bid</div>
+                    <div class="stat-val" id="curr-bid">₹5 Lakh</div>
+                    <span id="bidder-info">Starting price</span>
                 </div>
-                <div class="disp-box">
-                    <div class="disp-lbl">Time Left</div>
-                    <div class="disp-val" id="timer">10s</div>
+                <div class="stat-box">
+                    <div class="stat-lbl">Time Left</div>
+                    <div class="stat-val" id="timer">10s</div>
                 </div>
             </div>
 
-            <div class="controls">
-                <button class="btn btn-bid" id="bid-btn" disabled>PLACE BID</button>
-                <button class="btn btn-custom" onclick="openCustom()">CUSTOM</button>
+            <div class="bid-controls">
+                <button class="btn btn-main" id="bid-btn" disabled>PLACE BID</button>
+                <button class="btn btn-alt" onclick="openCustomBid()"><i class="fas fa-edit"></i></button>
             </div>
         </div>
     </main>
 
-    <div id="admin-area" class="admin-tray">
-        <button class="admin-btn btn-pause" id="pause-btn">PAUSE</button>
+    <div id="admin-controls" class="admin-tray">
+        <button class="admin-btn btn-pause" id="pause-resume-btn">PAUSE</button>
         <button class="admin-btn btn-dismiss" id="dismiss-btn">DISMISS</button>
-        <button class="admin-btn btn-pause" onclick="confirmEnd()">END ALL</button>
+        <button class="admin-btn btn-end" onclick="emergencyEnd()">END ALL</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io('/auction');
         const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        if(!user) location.href = '/index.html';
+        if(!user) window.location.href = '/index.html';
 
-        let lastT = 0;
-        let tInt = null;
+        let lastTimerEnd = 0;
+        let countdownInt = null;
 
-        function formatM(l) { return l < 100 ? `₹${l} Lakh` : `₹${(l/100).toFixed(2)} Crore`; }
-        function showT(m) { const t = document.getElementById('toast'); t.textContent = m; t.className = 'show'; setTimeout(() => t.className = '', 3000); }
+        function formatMoney(lakhs) {
+            if (lakhs < 100) return `₹${lakhs} Lakh`;
+            return `₹${(lakhs/100).toFixed(2)} Crore`;
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'show';
+            setTimeout(() => t.className = '', 3000);
+        }
 
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
 
-        socket.on('notification', (d) => showT(d.message));
+        socket.on('notification', (data) => showToast(data.message));
 
-        socket.on('stateUpdate', (s) => {
-            if (s.gameStatus === 'finished') { location.href = '/auction/results.html'; return; }
-            document.getElementById('pause-overlay').style.display = s.isPaused ? 'flex' : 'none';
-            if (user.isAuctionAdmin) {
-                document.getElementById('admin-area').style.display = 'flex';
-                const pb = document.getElementById('pause-btn');
-                pb.textContent = s.isPaused ? 'RESUME' : 'PAUSE';
-                pb.onclick = () => socket.emit(s.isPaused ? 'resume' : 'pause');
+        socket.on('stateUpdate', (state) => {
+            if (state.gameStatus === 'finished') {
+                window.location.href = '/auction/results.html';
+                return;
             }
 
-            const p = s.currentPlayer;
-            if (p) { document.getElementById('p-name').textContent = p.name.toUpperCase(); document.getElementById('p-pos').textContent = p.position; }
-
-            document.getElementById('curr-bid').textContent = formatM(s.currentBid);
-            document.getElementById('bidder-name').textContent = s.currentBidder ? `By ${s.currentBidder}` : 'Starting Price';
-
-            const next = s.currentBid + 5;
-            const bb = document.getElementById('bid-btn');
-            bb.textContent = `BID ${formatM(next)}`;
-            bb.disabled = (s.currentBidder === user.name || s.isPaused);
-            bb.onclick = () => socket.emit('bid', next);
-
-            const me = s.players.find(x => x.name === user.name);
-            if (me) document.getElementById('u-budget').textContent = formatM(me.budget);
-
-            if (s.timerEnd !== lastT) { lastT = s.timerEnd; runT(s.timerEnd, s.isPaused); }
-
+            // Pause Logic
+            document.getElementById('pause-banner').style.display = state.isPaused ? 'block' : 'none';
             if (user.isAuctionAdmin) {
-                const rem = Math.floor((s.timerEnd - Date.now()) / 1000);
-                const db = document.getElementById('dismiss-btn');
-                if (!s.currentBidder && rem <= 5 && rem > 0) { db.style.display = 'block'; db.onclick = () => socket.emit('dismiss'); }
-                else db.style.display = 'none';
+                document.getElementById('admin-controls').style.display = 'flex';
+                const pBtn = document.getElementById('pause-resume-btn');
+                pBtn.textContent = state.isPaused ? 'RESUME' : 'PAUSE';
+                pBtn.onclick = () => socket.emit(state.isPaused ? 'resume' : 'pause');
+            }
+
+            // Current Player
+            if (state.currentPlayer) {
+                document.getElementById('player-name').textContent = state.currentPlayer.name.toUpperCase();
+                document.getElementById('player-pos').textContent = state.currentPlayer.position;
+            }
+
+            // Bid Info
+            document.getElementById('curr-bid').textContent = formatMoney(state.currentBid);
+            document.getElementById('bidder-info').textContent = state.currentBidder ? `By ${state.currentBidder}` : 'Starting price';
+
+            // Bid Button
+            const bidBtn = document.getElementById('bid-btn');
+            const nextVal = state.currentBid + 5;
+            bidBtn.textContent = `BID ${formatMoney(nextVal)}`;
+            bidBtn.disabled = (state.currentBidder === user.name || state.isPaused);
+            bidBtn.onclick = () => socket.emit('bid', nextVal);
+
+            // Personal Budget
+            const me = state.players.find(p => p.name === user.name);
+            if (me) document.getElementById('my-budget').textContent = formatMoney(me.budget);
+
+            // Timer
+            if (state.timerEnd !== lastTimerEnd) {
+                lastTimerEnd = state.timerEnd;
+                startCountdown(state.timerEnd, state.isPaused);
+            }
+
+            // Dismiss Button (Admin Only)
+            if (user.isAuctionAdmin) {
+                const rem = Math.floor((state.timerEnd - Date.now()) / 1000);
+                const dBtn = document.getElementById('dismiss-btn');
+                if (!state.currentBidder && rem <= 5 && rem > 0) {
+                    dBtn.style.display = 'block';
+                    dBtn.onclick = () => socket.emit('dismiss');
+                } else {
+                    dBtn.style.display = 'none';
+                }
             }
         });
 
-        function runT(e, p) {
-            if (tInt) clearInterval(tInt);
-            if (p) { const rem = Math.max(0, Math.floor((e - Date.now()) / 1000)); document.getElementById('timer').textContent = rem + 's'; return; }
-            tInt = setInterval(() => {
-                const rem = Math.max(0, Math.floor((e - Date.now()) / 1000));
+        function startCountdown(end, paused) {
+            if (countdownInt) clearInterval(countdownInt);
+            if (paused) {
+                const rem = Math.max(0, Math.floor((end - Date.now()) / 1000));
+                document.getElementById('timer').textContent = rem + 's';
+                return;
+            }
+            countdownInt = setInterval(() => {
+                const rem = Math.max(0, Math.floor((end - Date.now()) / 1000));
                 const d = document.getElementById('timer');
                 d.textContent = rem + 's';
-                if (rem <= 3) d.className = 'disp-val urgent'; else d.className = 'disp-val';
-                if (rem <= 0) clearInterval(tInt);
+                if (rem <= 3) d.className = 'stat-val urgent'; else d.className = 'stat-val';
+                if (rem <= 0) clearInterval(countdownInt);
             }, 100);
         }
 
-        function openCustom() {
-            const v = prompt("Enter amount in Lakhs:");
-            const a = parseInt(v);
-            if (!isNaN(a) && a % 5 === 0) socket.emit('bid', a);
-            else if (v !== null) alert("Must be multiple of 5.");
+        function openCustomBid() {
+            const val = prompt("Enter amount in Lakhs (multiple of 5):");
+            const amt = parseInt(val);
+            if (!isNaN(amt) && amt % 5 === 0) {
+                socket.emit('bid', amt);
+            } else if (val !== null) {
+                alert("Invalid amount. Must be a multiple of 5.");
+            }
         }
 
-        function confirmEnd() { if (prompt('Type "END" to finish:') === 'END') socket.emit('emergencyEnd', 'END'); }
+        function emergencyEnd() {
+            if (prompt('Type "END" to confirm emergency termination:') === 'END') {
+                socket.emit('emergencyEnd', 'END');
+            }
+        }
     </script>
 </body>
 </html>
