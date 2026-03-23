@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mejores Amigos — Community Hub</title>
+    <title>Hub — Mejores Amigos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -13,20 +13,19 @@
             --primary: #111111;
             --accent: #F5B942;
             --surface: #F9F9FB;
-            --text-dim: #666666;
             --border: #EEEEEE;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--primary); min-height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-        /* Custom Loading Screen */
+        /* Custom Loading Animation */
         #loader {
             position: fixed; inset: 0; background: #fff; z-index: 10000; display: flex; align-items: center; justify-content: center;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.5s ease;
         }
-        .loader-logo { width: 100px; animation: bounce 1.2s infinite ease-in-out; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .loader-logo { width: 100px; animation: bounce 1.2s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
 
         .header { padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; z-index: 10; border-bottom: 1px solid var(--border); }
         .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
@@ -35,20 +34,19 @@
 
         .user-pill { display: flex; align-items: center; gap: 12px; background: var(--surface); padding: 8px 16px; border-radius: 100px; border: 1px solid var(--border); }
         .user-pill span { font-weight: 700; font-size: 14px; }
-        .logout-icon { font-size: 16px; color: var(--text-dim); cursor: pointer; transition: 0.2s; }
-        .logout-icon:hover { color: #ff4d4d; }
+        .logout-btn { font-size: 16px; color: #666; cursor: pointer; transition: 0.2s; }
+        .logout-btn:hover { color: #ff4d4d; }
 
-        .main-content { flex: 1; display: flex; align-items: stretch; justify-content: center; padding: 0; }
-        .grid-layout { display: flex; width: 100%; height: 100%; }
+        .grid-layout { flex: 1; display: flex; width: 100%; height: 100%; }
 
-        .hub-btn {
+        .hub-card {
             flex: 1;
             background: #fff;
             border: none;
             border-right: 1px solid var(--border);
             text-align: center;
             cursor: pointer;
-            transition: all 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+            transition: all 0.6s cubic-bezier(0.2, 1, 0.3, 1);
             position: relative;
             overflow: hidden;
             display: flex;
@@ -58,49 +56,38 @@
             gap: 24px;
             opacity: 0;
             transform: translateY(20px);
+            text-decoration: none;
+            color: inherit;
         }
-        .hub-btn:last-child { border-right: none; }
-        .hub-btn.show { opacity: 1; transform: translateY(0); }
+        .hub-card:last-child { border-right: none; }
+        .hub-card.show { opacity: 1; transform: translateY(0); }
 
-        .hub-btn::before {
+        .hub-card::after {
             content: '';
             position: absolute;
-            bottom: 0; left: 0; width: 100%; height: 4px;
+            bottom: 0; left: 0; width: 100%; height: 6px;
             background: var(--accent);
             transform: scaleX(0);
-            transition: transform 0.4s var(--trans);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .hub-btn:hover { background: var(--surface); }
-        .hub-btn:hover::before { transform: scaleX(1); }
-        .hub-btn:hover .icon-box { background: var(--primary); color: #fff; transform: scale(1.1) rotate(5deg); }
+        .hub-card:hover { background: var(--surface); }
+        .hub-card:hover::after { transform: scaleX(1); }
+        .hub-card:hover .emoji { transform: scale(1.2) rotate(8deg); }
 
-        .icon-box {
-            width: 100px; height: 100px;
-            background: var(--surface);
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            transition: 0.5s cubic-bezier(0.2, 1, 0.3, 1);
-            color: var(--primary);
-            border: 1px solid var(--border);
+        .emoji {
+            font-size: 64px;
+            transition: 0.6s cubic-bezier(0.2, 1, 0.3, 1);
         }
 
-        .hub-btn h2 { font-family: 'Syne'; font-size: 28px; font-weight: 800; letter-spacing: -0.8px; margin-top: 10px; }
-
-        /* Animation Overlay */
-        .page-trans { position: fixed; inset: 0; background: #fff; z-index: 10001; transform: translateX(-100%); transition: transform 0.6s cubic-bezier(0.2, 1, 0.3, 1); }
-        .page-trans.active { transform: translateX(0); }
+        .hub-card h2 { font-family: 'Syne'; font-size: 32px; font-weight: 800; letter-spacing: -1px; }
 
         @media (max-width: 900px) {
             .grid-layout { flex-direction: column; }
-            .hub-btn { border-right: none; border-bottom: 1px solid var(--border); }
-            .hub-btn:last-child { border-bottom: none; }
-            .hub-btn { flex-direction: row; padding: 0 40px; justify-content: flex-start; gap: 32px; }
-            .hub-btn h2 { font-size: 24px; margin-top: 0; }
-            .icon-box { width: 70px; height: 70px; font-size: 28px; border-radius: 20px; }
+            .hub-card { border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; padding: 0 40px; justify-content: flex-start; gap: 32px; }
+            .hub-card:last-child { border-bottom: none; }
+            .hub-card h2 { font-size: 28px; }
+            .emoji { font-size: 48px; }
         }
     </style>
 </head>
@@ -109,8 +96,6 @@
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="loader-logo">
     </div>
 
-    <div class="page-trans" id="trans-layer"></div>
-
     <header class="header">
         <a href="/hub.html" class="logo">
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
@@ -118,58 +103,45 @@
         </a>
         <div class="user-pill">
             <span id="u-name">...</span>
-            <i class="fas fa-power-off logout-icon" onclick="handleLogout()"></i>
+            <i class="fas fa-power-off logout-btn" onclick="handleLogout()"></i>
         </div>
     </header>
 
-    <main class="main-content">
-        <div class="grid-layout">
-            <div class="hub-btn" onclick="navigate('/auction/lobby.html')">
-                <div class="icon-box"><i class="fas fa-trophy"></i></div>
-                <h2>Games</h2>
-            </div>
-            <div class="hub-btn" onclick="navigate('/entertainment.html')">
-                <div class="icon-box"><i class="fas fa-clapperboard"></i></div>
-                <h2>Entertainment</h2>
-            </div>
-            <div class="hub-btn" onclick="navigate('/padippi.html')">
-                <div class="icon-box"><i class="fas fa-brain"></i></div>
-                <h2>Padippi Area</h2>
-            </div>
-        </div>
+    <main class="grid-layout">
+        <a href="/auction/lobby.html" class="hub-card">
+            <div class="emoji">🏆</div>
+            <h2>Games</h2>
+        </a>
+        <a href="/entertainment.html" class="hub-card">
+            <div class="emoji">🎬</div>
+            <h2>Entertainment</h2>
+        </a>
+        <a href="/padippi.html" class="hub-card">
+            <div class="emoji">📚</div>
+            <h2>Padippi Area</h2>
+        </a>
     </main>
 
     <script src="/js/auth.js"></script>
     <script>
         const loader = document.getElementById('loader');
-        const btns = document.querySelectorAll('.hub-btn');
+        const cards = document.querySelectorAll('.hub-card');
 
         async function init() {
             const user = await checkAuth();
-            if (!user) {
-                window.location.href = '/index.html';
-                return;
-            }
+            if (!user) { window.location.href = '/index.html'; return; }
             document.getElementById('u-name').textContent = user.name + (user.isAdmin ? ' 👑' : '');
 
-            // Hide loader
             setTimeout(() => {
                 loader.style.opacity = '0';
                 setTimeout(() => {
                     loader.style.display = 'none';
-                    btns.forEach((btn, i) => {
-                        setTimeout(() => btn.classList.add('show'), i * 150);
+                    cards.forEach((card, i) => {
+                        setTimeout(() => card.classList.add('show'), i * 150);
                     });
                 }, 400);
-            }, 600);
+            }, 800);
         }
-
-        function navigate(url) {
-            const trans = document.getElementById('trans-layer');
-            trans.classList.add('active');
-            setTimeout(() => window.location.href = url, 600);
-        }
-
         init();
     </script>
 </body>

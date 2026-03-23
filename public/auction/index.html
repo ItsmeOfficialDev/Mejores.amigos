@@ -26,7 +26,6 @@
         .logo img { width: 32px; height: 32px; border-radius: 8px; }
         .logo span { font-family: 'Syne'; font-size: 18px; font-weight: 800; }
 
-        .user-stats { display: flex; gap: 16px; align-items: center; }
         .budget-pill { background: var(--surface); padding: 8px 16px; border-radius: 100px; font-weight: 700; font-size: 13px; border: 1px solid var(--border); color: var(--accent); }
 
         .main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; position: relative; }
@@ -61,13 +60,11 @@
         .bid-controls { width: 100%; max-width: 420px; display: grid; grid-template-columns: 1fr 100px; gap: 12px; }
         .btn { padding: 20px; border-radius: 20px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; }
         .btn-main { background: var(--primary); color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .btn-main:hover { transform: translateY(-3px); }
-        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-alt { background: var(--surface); color: var(--primary); border: 1px solid var(--border); }
 
         #bidder-info { font-size: 13px; font-weight: 600; color: var(--text-dim); margin-top: 6px; display: block; }
 
-        /* Admin Dashboard Bottom Tray */
         .admin-tray {
             position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid var(--border);
             padding: 16px 24px; display: none; gap: 12px; z-index: 2000;
@@ -93,11 +90,9 @@
     <header class="header">
         <a href="/hub.html" class="logo">
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
-            <span>Mejores Amigos</span>
+            <span>Live Auction</span>
         </a>
-        <div class="user-stats">
-            <div class="budget-pill" id="my-budget">₹15.00 Cr</div>
-        </div>
+        <div class="budget-pill" id="my-budget">₹15.00 Cr</div>
     </header>
 
     <main class="main-stage">
@@ -152,7 +147,6 @@
         }
 
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
-
         socket.on('notification', (data) => showToast(data.message));
 
         socket.on('stateUpdate', (state) => {
@@ -161,7 +155,6 @@
                 return;
             }
 
-            // Pause Logic
             document.getElementById('pause-banner').style.display = state.isPaused ? 'block' : 'none';
             if (user.isAuctionAdmin) {
                 document.getElementById('admin-controls').style.display = 'flex';
@@ -170,34 +163,28 @@
                 pBtn.onclick = () => socket.emit(state.isPaused ? 'resume' : 'pause');
             }
 
-            // Current Player
             if (state.currentPlayer) {
                 document.getElementById('player-name').textContent = state.currentPlayer.name.toUpperCase();
                 document.getElementById('player-pos').textContent = state.currentPlayer.position;
             }
 
-            // Bid Info
             document.getElementById('curr-bid').textContent = formatMoney(state.currentBid);
             document.getElementById('bidder-info').textContent = state.currentBidder ? `By ${state.currentBidder}` : 'Starting price';
 
-            // Bid Button
             const bidBtn = document.getElementById('bid-btn');
             const nextVal = state.currentBid + 5;
             bidBtn.textContent = `BID ${formatMoney(nextVal)}`;
             bidBtn.disabled = (state.currentBidder === user.name || state.isPaused);
             bidBtn.onclick = () => socket.emit('bid', nextVal);
 
-            // Personal Budget
             const me = state.players.find(p => p.name === user.name);
             if (me) document.getElementById('my-budget').textContent = formatMoney(me.budget);
 
-            // Timer
             if (state.timerEnd !== lastTimerEnd) {
                 lastTimerEnd = state.timerEnd;
                 startCountdown(state.timerEnd, state.isPaused);
             }
 
-            // Dismiss Button (Admin Only)
             if (user.isAuctionAdmin) {
                 const rem = Math.floor((state.timerEnd - Date.now()) / 1000);
                 const dBtn = document.getElementById('dismiss-btn');
@@ -229,11 +216,8 @@
         function openCustomBid() {
             const val = prompt("Enter amount in Lakhs (multiple of 5):");
             const amt = parseInt(val);
-            if (!isNaN(amt) && amt % 5 === 0) {
-                socket.emit('bid', amt);
-            } else if (val !== null) {
-                alert("Invalid amount. Must be a multiple of 5.");
-            }
+            if (!isNaN(amt) && amt % 5 === 0) socket.emit('bid', amt);
+            else if (val !== null) alert("Must be multiple of 5.");
         }
 
         function emergencyEnd() {

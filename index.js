@@ -8,7 +8,6 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const cookieParser = require('cookie-parser');
 const path = require('path');
-const axios = require('axios');
 
 const app = express();
 const server = http.createServer(app);
@@ -19,28 +18,28 @@ const io = new Server(server, {
 
 // Models
 const User = require('./models/User');
-const Anime = require('./models/Anime');
-const Game = require('./models/Game');
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const IS_INVALID_URI = !MONGODB_URI ||
+const IS_PLACEHOLDER_URI = !MONGODB_URI ||
                        MONGODB_URI.includes('<password>') ||
                        MONGODB_URI.includes('cluster.mongodb.net');
 
 let isUsingMemoryDB = true;
 
-if (MONGODB_URI && !IS_INVALID_URI) {
+if (MONGODB_URI && !IS_PLACEHOLDER_URI) {
     mongoose.connect(MONGODB_URI)
       .then(() => {
           console.log('Connected to MongoDB');
           isUsingMemoryDB = false;
       })
       .catch(err => {
-          console.error('DB Connection Failed:', err.message);
+          console.error('DB Connection Failed (Process will continue in memory):', err.message);
       });
+} else {
+    console.log('Running in In-Memory mode (No valid MONGODB_URI provided).');
 }
 
-app.set('trust proxy', 1); // Trust first proxy (Render)
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -56,7 +55,7 @@ const sessionOptions = {
   }
 };
 
-if (MONGODB_URI && !IS_INVALID_URI) {
+if (MONGODB_URI && !IS_PLACEHOLDER_URI) {
     sessionOptions.store = MongoStore.MongoStore.create({
         mongoUrl: MONGODB_URI,
         collectionName: 'sessions'
@@ -103,13 +102,14 @@ app.post('/api/login', async (req, res) => {
       await user.save();
       req.session.userId = user._id;
     } catch (e) {
-        console.error('User save error:', e.message);
+        console.error('User persistence error:', e.message);
     }
   }
 
   req.session.name = finalName;
   req.session.isMainAppAdmin = isMainAdmin;
 
+  // BUG 1 FIX: Session save callback
   req.session.save((err) => {
     if (err) {
         console.error('Session save error:', err);
@@ -130,62 +130,6 @@ app.post('/api/logout', (req, res) => {
   req.session.destroy();
   res.clearCookie('connect.sid');
   res.json({ success: true });
-});
-
-// --- ANIME API ---
-app.get('/api/anime/search', async (req, res) => {
-    const { q } = req.query;
-    try {
-        const response = await axios.get(`https://api.jikan.moe/v4/anime?q=${q}&limit=10`);
-        const results = response.data.data.map(a => ({
-            title: a.title,
-            posterUrl: a.images.webp.large_image_url,
-            synopsis: a.synopsis,
-            jikanId: a.mal_id
-        }));
-        res.json(results);
-    } catch (e) {
-        res.status(500).json({ error: 'Search failed' });
-    }
-});
-
-app.post('/api/watch-history', async (req, res) => {
-    if (!req.session.name || !mongoose.connection.readyState === 1) return res.sendStatus(204);
-    const { title, timestamp } = req.body;
-    try {
-        await User.updateOne(
-            { nameLower: req.session.name.toLowerCase() },
-            { $push: { watchHistory: { $each: [{ animeTitle: title, timestamp, updatedAt: new Date() }], $position: 0, $slice: 10 } } }
-        );
-        res.sendStatus(200);
-    } catch (e) { res.sendStatus(500); }
-});
-
-app.get('/api/watch-history', async (req, res) => {
-    if (!req.session.name || !mongoose.connection.readyState === 1) return res.json([]);
-    const user = await User.findOne({ nameLower: req.session.name.toLowerCase() });
-    res.json(user ? user.watchHistory : []);
-});
-
-// --- ADMIN API ---
-app.get('/api/admin/stats', async (req, res) => {
-    if (!req.session.isMainAppAdmin) return res.status(403).json({ error: 'Forbidden' });
-    res.json({
-        userCount: mongoose.connection.readyState === 1 ? await User.countDocuments() : 'N/A',
-        animeCount: 191,
-        uptime: Math.floor((Date.now() - startTime) / 1000),
-        connections: io.engine.clientsCount
-    });
-});
-
-app.get('/api/admin/users', async (req, res) => {
-    if (!req.session.isMainAppAdmin) return res.status(403).json({ error: 'Forbidden' });
-    if (mongoose.connection.readyState === 1) {
-        const users = await User.find().sort('-createdAt').limit(50);
-        res.json(users);
-    } else {
-        res.json([{ name: req.session.name, isMainAppAdmin: true }]);
-    }
 });
 
 // --- ROUTES ---

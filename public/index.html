@@ -23,8 +23,8 @@
             position: fixed; inset: 0; background: #fff; z-index: 9999; display: flex; align-items: center; justify-content: center;
             transition: opacity 0.5s ease;
         }
-        .loader-logo { width: 120px; animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.2, 1); }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.92); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        .loader-logo { width: 120px; animation: bounce 1.2s infinite ease-in-out; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
 
         .auth-container { width: 100%; max-width: 380px; padding: 40px 24px; text-align: center; opacity: 0; transform: translateY(20px); transition: 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
         .auth-container.show { opacity: 1; transform: translateY(0); }
