@@ -2,47 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Help - Mejores Amigos</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <title>Help — Mejores Amigos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #FFFFFF; --primary: #111111; --surface: #F9F9FB; --border: #EEEEEE; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); color: var(--primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .card { width: 100%; max-width: 400px; background: #fff; border: 1px solid var(--border); border-radius: 32px; padding: 48px 32px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.04); }
+        h1 { font-family: 'Syne'; font-size: 32px; margin-bottom: 16px; }
+        p { color: #666; font-weight: 500; line-height: 1.6; margin-bottom: 24px; text-align: left; }
+        a { color: var(--primary); font-weight: 700; text-decoration: none; border-bottom: 2px solid #F5B942; }
+    </style>
 </head>
-<body class="landing-page">
-    <div class="container" style="text-align: left; padding: 40px;">
-        <div style="text-align: center; margin-bottom: 3rem;">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O27UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo" class="logo" style="width: 120px; height: 120px;">
-            <h1 style="font-size: 3.5rem; margin-top: 1rem;">HELP & RULES</h1>
-        </div>
-
-        <div style="background: var(--bg-card); padding: 3rem; border-radius: 2rem; border: var(--glass-border); font-size: 1.4rem; max-width: 900px; margin: 0 auto;">
-            <section style="margin-bottom: 3rem;">
-                <h3 style="color: var(--gold); font-size: 2rem; margin-bottom: 1rem;">🎮 HOW TO JOIN</h3>
-                <p>Enter your name and join the lobby. Admin accounts are accessed by appending "admin" to the username (e.g., "ishanadmin") and entering the group password.</p>
-            </section>
-
-            <section style="margin-bottom: 3rem;">
-                <h3 style="color: var(--gold); font-size: 2rem; margin-bottom: 1rem;">💰 BIDDING MECHANICS</h3>
-                <p>Starting bid for every player is ₹5 Lakh. Bids must be placed in increments of ₹5 Lakh. Use the "CUSTOM BID" button to leap ahead of the competition!</p>
-            </section>
-
-            <section style="margin-bottom: 3rem;">
-                <h3 style="color: var(--gold); font-size: 2rem; margin-bottom: 1rem;">🛡️ TEAM SQUAD LIMITS</h3>
-                <p>Every manager must complete an 18-player squad within the ₹15 Crore budget:</p>
-                <ul style="margin-left: 2rem; margin-top: 1rem;">
-                    <li>3 Goalkeepers (GK)</li>
-                    <li>5 Defenders (DEF)</li>
-                    <li>5 Midfielders (MID)</li>
-                    <li>5 Forwards (FWD)</li>
-                </ul>
-            </section>
-
-            <section style="margin-bottom: 3rem;">
-                <h3 style="color: var(--gold); font-size: 2rem; margin-bottom: 1rem;">🛑 RESERVE MONEY RULE</h3>
-                <p>Strategic budget management is key. You must always maintain a reserve of ₹10 Lakh for every remaining empty slot in your squad to ensure you can complete your team.</p>
-            </section>
-
-            <div style="text-align: center; margin-top: 4rem;">
-                <button onclick="window.location.href='/'" style="max-width: 300px; font-size: 1.5rem; padding: 20px;">UNDERSTOOD, LET'S PLAY!</button>
-            </div>
-        </div>
+<body>
+    <div class="card">
+        <h1>Guide</h1>
+        <p>• <b>Auction</b>: 15 Cr budget, 10s timer, GK(3), DEF(5), MID(5), FWD(5).<br>• <b>Reserve</b>: Always keep 10L per empty slot.<br>• <b>Games</b>: Play Chess or Tic-Tac-Toe with friends.</p>
+        <a href="/hub.html">Back to Hub</a>
     </div>
 </body>
 </html>

@@ -2,56 +2,131 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tic Tac Toe — Mejores Amigos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #0a0a0f; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .ttt-grid { display: grid; grid-template-columns: repeat(3, 120px); grid-gap: 15px; margin: 30px; }
-        .ttt-cell { width: 120px; height: 120px; background: #16161f; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 54px; font-weight: 800; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); color: #4ade80; transition: 0.2s; }
-        .ttt-cell:hover { background: #1d1d2a; }
-        .info { font-size: 20px; color: #9896aa; font-family: 'Syne'; }
-        .btn-back { position: absolute; top: 20px; left: 20px; color: #9896aa; text-decoration: none; }
+        :root {
+            --bg: #FFFFFF;
+            --primary: #111111;
+            --accent: #F5B942;
+            --surface: #F9F9FB;
+            --border: #EEEEEE;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); color: var(--primary); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+        .header { width: 100%; padding: 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+        .logo img { width: 32px; height: 32px; border-radius: 8px; }
+        .logo span { font-family: 'Syne'; font-size: 18px; font-weight: 800; }
+
+        .game-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; }
+
+        .status-bar { margin-bottom: 32px; font-family: 'Syne'; font-size: 24px; font-weight: 800; }
+
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 320px; height: 320px; }
+        .cell { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 800; font-family: 'Syne'; cursor: pointer; transition: 0.2s; }
+        .cell:hover { background: #fff; border-color: var(--primary); }
+        .cell.X { color: var(--primary); }
+        .cell.O { color: var(--accent); }
+
+        .players-info { margin-top: 40px; display: flex; gap: 48px; }
+        .p-box { text-align: center; }
+        .p-lbl { font-size: 11px; text-transform: uppercase; font-weight: 800; color: #999; margin-bottom: 4px; }
+        .p-val { font-weight: 700; }
+
+        #invite { margin-top: 32px; color: var(--accent); font-weight: 700; cursor: pointer; font-size: 13px; }
     </style>
 </head>
 <body>
-    <a href="/hub.html" class="btn-back"><i class="fas fa-chevron-left"></i> Back to Hub</a>
-    <div class="info" id="status">Connecting...</div>
-    <div class="ttt-grid">
-        <div class="ttt-cell" onclick="makeMove(0)"></div><div class="ttt-cell" onclick="makeMove(1)"></div><div class="ttt-cell" onclick="makeMove(2)"></div>
-        <div class="ttt-cell" onclick="makeMove(3)"></div><div class="ttt-cell" onclick="makeMove(4)"></div><div class="ttt-cell" onclick="makeMove(5)"></div>
-        <div class="ttt-cell" onclick="makeMove(6)"></div><div class="ttt-cell" onclick="makeMove(7)"></div><div class="ttt-cell" onclick="makeMove(8)"></div>
-    </div>
-    <div id="players" style="margin-bottom: 20px;"></div>
-    <div style="font-size:11px; opacity:0.5;">Invite URL: <span id="url"></span></div>
+    <header class="header">
+        <a href="/hub.html" class="logo">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
+            <span>Tic Tac Toe</span>
+        </a>
+    </header>
+
+    <main class="game-area">
+        <div class="status-bar" id="status">Waiting for Player...</div>
+
+        <div class="grid" id="grid">
+            <div class="cell" onclick="makeMove(0)"></div>
+            <div class="cell" onclick="makeMove(1)"></div>
+            <div class="cell" onclick="makeMove(2)"></div>
+            <div class="cell" onclick="makeMove(3)"></div>
+            <div class="cell" onclick="makeMove(4)"></div>
+            <div class="cell" onclick="makeMove(5)"></div>
+            <div class="cell" onclick="makeMove(6)"></div>
+            <div class="cell" onclick="makeMove(7)"></div>
+            <div class="cell" onclick="makeMove(8)"></div>
+        </div>
+
+        <div class="players-info">
+            <div class="p-box">
+                <div class="p-lbl">Player X</div>
+                <div class="p-val" id="p-x">...</div>
+            </div>
+            <div class="p-box">
+                <div class="p-lbl">Player O</div>
+                <div class="p-val" id="p-o">...</div>
+            </div>
+        </div>
+
+        <div id="invite" onclick="copyLink()">Copy Invite Link</div>
+    </main>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/auth.js"></script>
     <script>
-        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        const urlParams = new URLSearchParams(window.location.search);
-        let gameId = urlParams.get('g') || Math.random().toString(36).substring(7);
-        if(!urlParams.get('g')) window.history.replaceState({}, '', '?g=' + gameId);
-        document.getElementById('url').textContent = window.location.href;
-
         const socket = io('/tictactoe');
-        let mySym = null, currentTurn = 'X', board = Array(9).fill('');
+        const user = getStoredUser();
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameId = urlParams.get('g') || Math.random().toString(36).substring(7);
+        if(!urlParams.get('g')) window.history.replaceState({}, '', `?g=${gameId}`);
+
+        let mySymbol = null;
+        let currentTurn = 'X';
 
         socket.emit('joinGame', { gameId, player: user.name });
+
         socket.on('gameState', (g) => {
-            board = g.board; currentTurn = g.turn;
-            mySym = (g.X === user.name) ? 'X' : (g.O === user.name ? 'O' : null);
-            document.getElementById('players').textContent = `X: ${g.X} vs O: ${g.O || '?'}`;
-            updateUI();
+            if (g.X === user.name) mySymbol = 'X';
+            else if (g.O === user.name) mySymbol = 'O';
+            else if (!g.O) mySymbol = 'O';
+
+            document.getElementById('p-x').textContent = g.X || '...';
+            document.getElementById('p-o').textContent = g.O || '...';
+            currentTurn = g.turn;
+
+            const cells = document.querySelectorAll('.cell');
+            g.board.forEach((val, i) => {
+                cells[i].textContent = val;
+                cells[i].className = 'cell ' + val;
+            });
+
+            if (g.turn === mySymbol) document.getElementById('status').textContent = "Your Turn ("+mySymbol+")";
+            else document.getElementById('status').textContent = "Waiting for " + g.turn + "...";
+        });
+
+        socket.on('gameOver', (data) => {
+            document.getElementById('status').textContent = data.winner === 'Draw' ? "It's a Draw!" : data.winner + " Wins!";
+            alert("Game Over: " + (data.winner === 'Draw' ? "Draw" : data.winner + " Won"));
         });
 
         function makeMove(i) {
-            if (currentTurn === mySym && board[i] === '') socket.emit('move', { gameId, index: i, symbol: mySym });
+            if (currentTurn === mySymbol) {
+                socket.emit('move', { gameId, index: i, symbol: mySymbol });
+            }
         }
 
-        function updateUI() {
-            document.querySelectorAll('.ttt-cell').forEach((c, i) => c.textContent = board[i]);
-            document.getElementById('status').textContent = (currentTurn === mySym) ? "Your Turn" : "Opponent's Turn";
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href);
+            document.getElementById('invite').textContent = 'Copied!';
+            setTimeout(() => document.getElementById('invite').textContent = 'Copy Invite Link', 2000);
         }
-
-        socket.on('gameOver', (d) => { alert('Game Over: ' + d.winner); location.href='/hub.html'; });
     </script>
 </body>
 </html>

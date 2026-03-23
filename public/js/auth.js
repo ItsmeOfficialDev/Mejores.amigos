@@ -7,13 +7,13 @@ async function checkAuth() {
                 localStorage.setItem('mejoresAmigosUser', JSON.stringify(data.user));
                 return data.user;
             }
+        } else if (res.status === 401) {
+            // FIX: Clear local storage on 401 Unauthorized
+            localStorage.removeItem('mejoresAmigosUser');
         }
     } catch (e) {
         console.error("Auth check failed", e);
     }
-
-    // If we reach here, either the fetch failed or the session is invalid
-    localStorage.removeItem('mejoresAmigosUser');
     return null;
 }
 

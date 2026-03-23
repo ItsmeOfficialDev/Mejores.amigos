@@ -18,28 +18,36 @@ const io = new Server(server, {
 
 // Models
 const User = require('./models/User');
-const Anime = require('./models/Anime');
-const Game = require('./models/Game');
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const IS_PLACEHOLDER_URI = !MONGODB_URI || MONGODB_URI.includes('cluster.mongodb.net');
+const IS_PLACEHOLDER_URI = !MONGODB_URI ||
+                       MONGODB_URI.includes('<password>') ||
+                       MONGODB_URI.includes('cluster.mongodb.net');
 
-// DB Connection
+let isUsingMemoryDB = true;
+
 if (MONGODB_URI && !IS_PLACEHOLDER_URI) {
     mongoose.connect(MONGODB_URI)
-      .then(() => console.log('Connected to MongoDB'))
-      .catch(err => console.error('DB Error:', err.message));
+      .then(() => {
+          console.log('Connected to MongoDB');
+          isUsingMemoryDB = false;
+      })
+      .catch(err => {
+          console.error('DB Connection Failed (Process will continue in memory):', err.message);
+      });
+} else {
+    console.log('Running in In-Memory mode (No valid MONGODB_URI provided).');
 }
 
-// Middleware
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const sessionOptions = {
   secret: process.env.SESSION_SECRET || 'mejores-ultra-secret',
-  resave: true, // Force session to be saved back to the session store
-  saveUninitialized: true, // Force a session that is "uninitialized" to be saved to the store
+  resave: true,
+  saveUninitialized: true,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     maxAge: 30 * 24 * 60 * 60 * 1000,
@@ -60,7 +68,7 @@ io.engine.use(sessionMiddleware);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- AUTH ---
+// --- AUTH API ---
 app.post('/api/login', async (req, res) => {
   const { name, password } = req.body;
   if (!name) return res.status(400).json({ error: 'Name required' });
@@ -74,13 +82,12 @@ app.post('/api/login', async (req, res) => {
         isMainAdmin = true;
         finalName = (nameLower === 'admin') ? 'Admin' : finalName.slice(0, -5).trim();
     } else {
-        return res.status(401).json({ error: 'Wrong Admin password' });
+        return res.status(401).json({ error: 'Invalid admin password' });
     }
   }
 
   finalName = finalName.charAt(0).toUpperCase() + finalName.slice(1);
 
-  // Persistence if DB connected
   if (mongoose.connection.readyState === 1) {
     try {
       let user = await User.findOne({ nameLower: finalName.toLowerCase() });
@@ -94,15 +101,20 @@ app.post('/api/login', async (req, res) => {
       }
       await user.save();
       req.session.userId = user._id;
-    } catch (e) {}
+    } catch (e) {
+        console.error('User persistence error:', e.message);
+    }
   }
 
   req.session.name = finalName;
   req.session.isMainAppAdmin = isMainAdmin;
 
-  // Explicitly save session before responding
+  // BUG 1 FIX: Session save callback
   req.session.save((err) => {
-    if (err) return res.status(500).json({ error: 'Session save failed' });
+    if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Internal Session Error' });
+    }
     res.json({ user: { name: finalName, isAuctionAdmin: isMainAdmin, isAdmin: isMainAdmin } });
   });
 });
@@ -116,6 +128,7 @@ app.get('/api/me', (req, res) => {
 
 app.post('/api/logout', (req, res) => {
   req.session.destroy();
+  res.clearCookie('connect.sid');
   res.json({ success: true });
 });
 
@@ -124,13 +137,14 @@ app.get('/auction/lobby.html', (req, res) => res.sendFile(path.join(__dirname, '
 app.get('/auction/index.html', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/index.html')));
 app.get('/auction/results.html', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/results.html')));
 
-// --- SOCKETS ---
 require('./socket/chess')(io);
 require('./socket/tictactoe')(io);
 require('./socket/auction')(io);
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+});
 
-process.on('unhandledRejection', (r) => console.error('Rejection:', r));
-process.on('uncaughtException', (e) => console.error('Exception:', e));
+process.on('unhandledRejection', (reason) => console.error('Rejection:', reason));
+process.on('uncaughtException', (error) => console.error('Exception:', error));

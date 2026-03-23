@@ -3,66 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mejores Amigos — Final Results</title>
+    <title>Champions — Mejores Amigos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         :root {
-            --bg: #ffffff;
+            --bg: #FFFFFF;
             --primary: #111111;
-            --accent: #f5b942;
-            --surface: #f8f9fa;
+            --accent: #F5B942;
+            --surface: #F9F9FB;
             --text-dim: #666666;
-            --border: #e9ecef;
+            --border: #EEEEEE;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--primary); min-height: 100vh; padding: 24px; }
+        body { background: var(--bg); color: var(--primary); min-height: 100vh; display: flex; flex-direction: column; }
 
-        .header { text-align: center; margin-bottom: 40px; }
-        h1 { font-family: 'Syne'; font-size: 32px; font-weight: 800; }
+        .header { padding: 48px 24px 24px; text-align: center; }
+        h1 { font-family: 'Syne'; font-size: 42px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 8px; }
+        .sub-head { color: var(--text-dim); font-weight: 600; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; }
 
-        .results-box { max-width: 600px; margin: 0 auto; background: #fff; border: 1px solid var(--border); border-radius: 24px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+        .container { flex: 1; width: 100%; max-width: 800px; margin: 0 auto; padding: 24px; }
 
-        .team-selector { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); font-size: 15px; font-weight: 600; margin-bottom: 24px; outline: none; }
+        .results-box { background: #fff; border: 1px solid var(--border); border-radius: 32px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); }
 
-        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
-        .stat-card { background: var(--surface); padding: 16px 8px; border-radius: 16px; text-align: center; border: 1px solid var(--border); }
-        .stat-val { font-size: 16px; font-weight: 800; display: block; }
-        .stat-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); }
+        .selector-wrap { position: relative; margin-bottom: 32px; }
+        .team-selector {
+            width: 100%; padding: 20px 24px; border-radius: 20px; border: 1px solid var(--border);
+            background: var(--surface); font-size: 16px; font-weight: 700; outline: none; appearance: none;
+            cursor: pointer; transition: 0.3s;
+        }
+        .team-selector:focus { border-color: var(--primary); background: #fff; }
 
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; font-size: 11px; text-transform: uppercase; color: var(--text-dim); padding: 12px 8px; border-bottom: 1px solid var(--border); }
-        td { padding: 12px 8px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: var(--surface); padding: 24px 12px; border-radius: 24px; text-align: center; border: 1px solid var(--border); }
+        .stat-val { font-size: 20px; font-weight: 800; display: block; color: var(--primary); }
+        .stat-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px; margin-top: 4px; }
 
-        .pos-badge { font-weight: 800; font-size: 10px; padding: 4px 8px; border-radius: 6px; background: var(--surface); color: var(--primary); margin-right: 8px; }
+        .table-wrap { overflow-x: auto; border-radius: 20px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th { text-align: left; font-size: 11px; text-transform: uppercase; color: var(--text-dim); padding: 20px 16px; border-bottom: 1px solid var(--border); background: var(--surface); }
+        td { padding: 18px 16px; border-bottom: 1px solid var(--border); font-size: 15px; font-weight: 500; }
 
-        .btn-home { display: block; width: 100%; max-width: 300px; margin: 40px auto 0; background: var(--primary); color: #fff; padding: 20px; border-radius: 16px; text-decoration: none; font-weight: 700; text-align: center; }
+        .pos-badge { font-weight: 800; font-size: 10px; padding: 6px 10px; border-radius: 8px; background: var(--surface); color: var(--primary); margin-right: 12px; border: 1px solid var(--border); }
+        .alloc-tag { font-size: 11px; color: var(--accent); font-weight: 700; margin-left: 8px; }
+
+        .btn-home {
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            width: 100%; max-width: 320px; margin: 48px auto; background: var(--primary); color: #fff;
+            padding: 22px; border-radius: 24px; text-decoration: none; font-weight: 700; font-size: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); transition: 0.3s;
+        }
+        .btn-home:hover { transform: translateY(-4px); }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 32px; }
+            .results-box { padding: 20px; border-radius: 24px; }
+            .summary-grid { gap: 10px; }
+            .stat-val { font-size: 16px; }
+        }
     </style>
 </head>
 <body>
-    <div class="header">
+    <header class="header">
+        <div class="sub-head">Mejores Amigos</div>
         <h1>Champions</h1>
-        <p style="color:var(--text-dim); font-weight:500;">Auction Final Standing</p>
-    </div>
+    </header>
 
-    <div class="results-box">
-        <select id="userSelector" class="team-selector"></select>
-        <div class="summary-grid" id="summary"></div>
-        <div style="overflow-x: auto;">
-            <table id="playerTable">
-                <thead><tr><th>Player</th><th>Position</th><th>Price</th></tr></thead>
-                <tbody id="playerBody"></tbody>
-            </table>
+    <div class="container">
+        <div class="results-box">
+            <div class="selector-wrap">
+                <select id="userSelector" class="team-selector"></select>
+            </div>
+
+            <div class="summary-grid" id="summary"></div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Pos</th>
+                            <th style="text-align:right;">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playerBody"></tbody>
+                </table>
+            </div>
         </div>
-    </div>
 
-    <a href="/hub.html" class="btn-home">BACK TO HUB</a>
+        <a href="/hub.html" class="btn-home">
+            <i class="fas fa-house"></i>
+            BACK TO HUB
+        </a>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io('/auction');
         const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+        if(!user) window.location.href = '/index.html';
+
         let players = [];
         let selected = null;
 
@@ -74,8 +116,11 @@
             players = s.players;
             const sel = document.getElementById('userSelector');
             const cur = sel.value || user.name;
+
+            // Map players to options
             sel.innerHTML = players.map(p => `<option value="${p.name}">${p.name}'s Squad</option>`).join('');
             sel.value = cur;
+
             selected = players.find(x => x.name === cur);
             render();
         });
@@ -88,16 +133,31 @@
         function render() {
             if (!selected) return;
             const team = selected.team || [];
+
             document.getElementById('summary').innerHTML = `
-                <div class="stat-card"><span class="stat-val">${formatM(selected.budget)}</span><span class="stat-lbl">Remaining</span></div>
-                <div class="stat-card"><span class="stat-val">${formatM(1500 - selected.budget)}</span><span class="stat-lbl">Spent</span></div>
-                <div class="stat-card"><span class="stat-val">${team.length}/18</span><span class="stat-lbl">Squad</span></div>
+                <div class="stat-card">
+                    <span class="stat-val">${formatM(selected.budget)}</span>
+                    <span class="stat-lbl">Budget</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-val">${formatM(1500 - selected.budget)}</span>
+                    <span class="stat-lbl">Spent</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-val">${team.length}/18</span>
+                    <span class="stat-lbl">Squad</span>
+                </div>
             `;
+
             document.getElementById('playerBody').innerHTML = team.map(p => `
                 <tr>
-                    <td><span class="pos-badge">${p.position}</span>${p.name}</td>
+                    <td>
+                        <span class="pos-badge">${p.position}</span>
+                        ${p.name}
+                        ${p.random ? '<span class="alloc-tag">(Allocated)</span>' : ''}
+                    </td>
                     <td>${p.position}</td>
-                    <td style="font-weight:700;">${formatM(p.price)}</td>
+                    <td style="font-weight:800; text-align:right;">${formatM(p.price)}</td>
                 </tr>
             `).join('');
         }
