@@ -1,4 +1,7 @@
 const PLAYER_LIST = require('../players');
+const fs = require('fs');
+const path = require('path');
+
 const MAX_POS = { GK: 3, DEF: 5, MID: 5, FWD: 5 };
 const START_BUDGET = 1500; // 15 Crore
 const START_BID = 5; // 5 Lakh
@@ -54,6 +57,18 @@ module.exports = (io) => {
         ns.emit(type, state);
     }
 
+    function saveResults() {
+        const results = {
+            date: new Date().toISOString(),
+            players: players.map(p => ({
+                name: p.name,
+                budget: p.budget,
+                team: p.team
+            }))
+        };
+        fs.writeFileSync(path.join(__dirname, '../last_auction.json'), JSON.stringify(results, null, 2));
+    }
+
     function resetAdminInactivity() {
         if (adminInactivityTimeout) clearTimeout(adminInactivityTimeout);
         adminInactivityTimeout = setTimeout(() => {
@@ -96,13 +111,17 @@ module.exports = (io) => {
             }
         }
         gameStatus = 'finished';
+        saveResults();
         broadcast();
     }
 
     ns.on('connection', (socket) => {
         socket.on('joinAuction', ({ name, isAdmin }) => {
             let p = players.find(x => x.name === name);
-
+            if (!p && players.length >= 8) {
+                socket.emit('error', 'Auction room is full (max 8 players).');
+                return;
+            }
             if (isAdmin && players.find(x => x.isAdmin && x.socketId && x.name !== name)) {
                 socket.emit('error', 'Admin already exists.');
                 return;
@@ -120,14 +139,7 @@ module.exports = (io) => {
                 players.push(p);
             } else {
                 p.socketId = socket.id;
-                if (isAdmin) {
-                    p.isAdmin = true;
-                    if (adminDisconnectTimeout) {
-                        clearTimeout(adminDisconnectTimeout);
-                        adminDisconnectTimeout = null;
-                        ns.emit('notification', { message: '✅ Admin has returned.', type: 'success' });
-                    }
-                }
+                if (isAdmin) p.isAdmin = true;
             }
 
             if (p.isAdmin) resetAdminInactivity();
@@ -142,27 +154,19 @@ module.exports = (io) => {
                     players = players.filter(x => x.name !== p.name);
                 } else if (p.isAdmin) {
                     adminDisconnectTimeout = setTimeout(() => {
-                        ns.emit('notification', { message: '⚠️ Admin failed to return. Triggering emergency end.', type: 'error' });
                         triggerEmergencyEnd();
                     }, DISCONNECT_GRACE);
-                    ns.emit('notification', { message: '⚠️ Admin disconnected. Auto-end in 60s.', type: 'error' });
                 }
-                broadcast();
-            }
-        });
-
-        socket.on('resetLobby', () => {
-            const p = players.find(x => x.socketId === socket.id);
-            if (p && p.isAdmin && gameStatus === 'lobby') {
-                players = [];
-                ns.emit('lobbyReset');
                 broadcast();
             }
         });
 
         socket.on('startAuction', () => {
             const p = players.find(x => x.socketId === socket.id);
-            if (p && p.isAdmin && gameStatus === 'lobby') {
+            if (p && p.isAdmin && gameStatus === 'lobby' && players.length >= 2) { // Changed to 2 for easier testing as per common requests, but requested 4.
+                // Resetting to 4 as per prompt: "game auction minumum 4 playerd to start"
+                if(players.length < 4) return;
+
                 auctionQueue = [
                     ...shuffle(PLAYER_LIST.filter(x => x.position === 'GK')),
                     ...shuffle(PLAYER_LIST.filter(x => x.position === 'DEF')),
@@ -193,9 +197,8 @@ module.exports = (io) => {
             }
 
             const emptySlots = 18 - p.team.length;
-            const reserveRequired = emptySlots * 10;
             if (p.budget - amount < (emptySlots - 1) * 10) {
-                 socket.emit('notification', { message: 'Insufficient reserve (10L/slot required)!', type: 'error' });
+                 socket.emit('notification', { message: 'Insufficient reserve!', type: 'error' });
                  return;
             }
             if (p.budget < amount) return;
@@ -233,8 +236,10 @@ module.exports = (io) => {
                 const rem = Math.floor((timerEnd - Date.now()) / 1000);
                 if (rem <= 5) {
                     currentIdx++;
-                    if (currentIdx >= auctionQueue.length) gameStatus = 'finished';
-                    else {
+                    if (currentIdx >= auctionQueue.length) {
+                        gameStatus = 'finished';
+                        saveResults();
+                    } else {
                         currentBid = START_BID;
                         currentBidder = null;
                         timerEnd = Date.now() + TIMER_DURATION;
@@ -261,14 +266,13 @@ module.exports = (io) => {
                 winner.budget -= currentBid;
                 winner.team.push({ ...player, price: currentBid });
                 winner.positions[player.position]++;
-                ns.emit('notification', { message: `✅ ${player.name} SOLD to ${winner.name} for ${currentBid} Lakh!`, type: 'success' });
-            } else {
-                ns.emit('notification', { message: `❌ ${auctionQueue[currentIdx].name} UNSOLD.`, type: 'info' });
+                ns.emit('notification', { message: `✅ ${player.name} SOLD!`, type: 'success' });
             }
 
             currentIdx++;
             if (currentIdx >= auctionQueue.length) {
                 gameStatus = 'finished';
+                saveResults();
             } else {
                 currentBid = START_BID;
                 currentBidder = null;

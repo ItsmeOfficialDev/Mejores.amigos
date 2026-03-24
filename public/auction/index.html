@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Live Auction — Mejores Amigos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         :root {
@@ -21,14 +21,15 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--primary); min-height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-        .header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fff; z-index: 100; }
         .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
         .logo img { width: 32px; height: 32px; border-radius: 8px; }
         .logo span { font-family: 'Syne'; font-size: 18px; font-weight: 800; }
 
-        .budget-pill { background: var(--surface); padding: 8px 16px; border-radius: 100px; font-weight: 700; font-size: 13px; border: 1px solid var(--border); color: var(--accent); }
+        .user-stats { display: flex; gap: 16px; align-items: center; }
+        .budget-pill { background: var(--surface); padding: 8px 16px; border-radius: 100px; font-weight: 800; font-size: 13px; border: 1px solid var(--border); color: var(--accent); }
 
-        .main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; position: relative; }
+        .main-stage { flex: 1; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
 
         #pause-banner {
             position: fixed; top: 0; left: 0; width: 100%; background: var(--accent); color: #000; padding: 12px;
@@ -36,7 +37,7 @@
         }
 
         .player-card {
-            width: 100%; max-width: 420px; background: #fff; border-radius: 40px; border: 1px solid var(--border);
+            width: 100%; max-width: 440px; background: #fff; border-radius: 40px; border: 1px solid var(--border);
             padding: 48px 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.04);
             animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
         }
@@ -47,7 +48,7 @@
             letter-spacing: 1px; color: var(--accent); border: 1px solid var(--border); margin-bottom: 24px; display: inline-block;
         }
 
-        #player-name { font-family: 'Syne'; font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 32px; line-height: 1.1; }
+        #p-name { font-family: 'Syne'; font-size: 40px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 32px; line-height: 1; color: var(--primary); }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; margin-bottom: 32px; }
         .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 24px; text-align: center; }
@@ -57,14 +58,15 @@
         #timer { color: var(--primary); }
         #timer.urgent { color: var(--red); transform: scale(1.1); transition: 0.2s; }
 
-        .bid-controls { width: 100%; max-width: 420px; display: grid; grid-template-columns: 1fr 100px; gap: 12px; }
-        .btn { padding: 20px; border-radius: 20px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .btn-main { background: var(--primary); color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-alt { background: var(--surface); color: var(--primary); border: 1px solid var(--border); }
+        .controls { width: 100%; max-width: 440px; display: grid; grid-template-columns: 1fr 100px; gap: 12px; }
+        .btn { padding: 20px; border-radius: 20px; border: none; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .btn-bid { background: var(--primary); color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .btn-bid:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-custom { background: var(--surface); color: var(--primary); border: 1px solid var(--border); }
 
-        #bidder-info { font-size: 13px; font-weight: 600; color: var(--text-dim); margin-top: 6px; display: block; }
+        #bidder-name { font-size: 13px; font-weight: 700; color: var(--text-dim); margin-top: 6px; display: block; }
 
+        /* Admin Bottom Tray */
         .admin-tray {
             position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid var(--border);
             padding: 16px 24px; display: none; gap: 12px; z-index: 2000;
@@ -81,6 +83,9 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
+
+        .footer-counts { background: var(--surface); padding: 16px; border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 20px; font-size: 11px; font-weight: 800; color: var(--text-dim); }
+        .count-item span { color: var(--primary); }
     </style>
 </head>
 <body>
@@ -90,21 +95,23 @@
     <header class="header">
         <a href="/hub.html" class="logo">
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
-            <span>Live Auction</span>
+            <span>Mejores Amigos</span>
         </a>
-        <div class="budget-pill" id="my-budget">₹15.00 Cr</div>
+        <div class="user-stats">
+            <div class="budget-pill" id="u-budget">₹15.00 Crore</div>
+        </div>
     </header>
 
     <main class="main-stage">
         <div class="player-card">
-            <div class="pos-tag" id="player-pos">POSITION</div>
-            <h1 id="player-name">WAITING...</h1>
+            <div class="pos-tag" id="p-pos">POSITION</div>
+            <h1 id="p-name">LOADING...</h1>
 
             <div class="stats-grid">
                 <div class="stat-box">
                     <div class="stat-lbl">Highest Bid</div>
                     <div class="stat-val" id="curr-bid">₹5 Lakh</div>
-                    <span id="bidder-info">Starting price</span>
+                    <span id="bidder-name">Starting price</span>
                 </div>
                 <div class="stat-box">
                     <div class="stat-lbl">Time Left</div>
@@ -112,119 +119,111 @@
                 </div>
             </div>
 
-            <div class="bid-controls">
-                <button class="btn btn-main" id="bid-btn" disabled>PLACE BID</button>
-                <button class="btn btn-alt" onclick="openCustomBid()"><i class="fas fa-edit"></i></button>
+            <div class="controls">
+                <button class="btn btn-bid" id="bid-btn" disabled>PLACE BID</button>
+                <button class="btn btn-custom" onclick="openCustom()"><i class="fas fa-edit"></i></button>
             </div>
         </div>
     </main>
 
-    <div id="admin-controls" class="admin-tray">
-        <button class="admin-btn btn-pause" id="pause-resume-btn">PAUSE</button>
+    <div class="footer-counts" id="f-counts">
+        <div class="count-item">GK <span id="c-gk">0/3</span></div>
+        <div class="count-item">DEF <span id="c-def">0/5</span></div>
+        <div class="count-item">MID <span id="c-mid">0/5</span></div>
+        <div class="count-item">FWD <span id="c-fwd">0/5</span></div>
+        <div class="count-item">TOTAL <span id="c-total">0/18</span></div>
+    </div>
+
+    <div id="admin-area" class="admin-tray">
+        <button class="admin-btn btn-pause" id="pause-btn">PAUSE</button>
         <button class="admin-btn btn-dismiss" id="dismiss-btn">DISMISS</button>
-        <button class="admin-btn btn-end" onclick="emergencyEnd()">END ALL</button>
+        <button class="admin-btn btn-end" onclick="confirmEnd()">EMERGENCY END</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io('/auction');
-        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        if(!user) window.location.href = '/index.html';
+        const user = JSON.parse(localStorage.getItem('auctionUser'));
+        if(!user) window.location.href = '/auction/login';
 
-        let lastTimerEnd = 0;
-        let countdownInt = null;
+        let lastT = 0;
+        let tInt = null;
 
-        function formatMoney(lakhs) {
-            if (lakhs < 100) return `₹${lakhs} Lakh`;
-            return `₹${(lakhs/100).toFixed(2)} Crore`;
+        function formatM(l) {
+            if (l < 100) return `₹${l} Lakh`;
+            return `₹${(l/100).toFixed(2)} Crore`;
         }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = 'show';
-            setTimeout(() => t.className = '', 3000);
-        }
+        function showT(m) { const t = document.getElementById('toast'); t.textContent = m; t.className = 'show'; setTimeout(() => t.className = '', 3000); }
 
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
-        socket.on('notification', (data) => showToast(data.message));
+        socket.on('notification', (d) => showT(d.message));
 
-        socket.on('stateUpdate', (state) => {
-            if (state.gameStatus === 'finished') {
-                window.location.href = '/auction/results.html';
-                return;
-            }
-
-            document.getElementById('pause-banner').style.display = state.isPaused ? 'block' : 'none';
+        socket.on('stateUpdate', (s) => {
+            if (s.gameStatus === 'finished') { window.location.href = '/auction/results'; return; }
+            document.getElementById('pause-banner').style.display = s.isPaused ? 'block' : 'none';
             if (user.isAuctionAdmin) {
-                document.getElementById('admin-controls').style.display = 'flex';
-                const pBtn = document.getElementById('pause-resume-btn');
-                pBtn.textContent = state.isPaused ? 'RESUME' : 'PAUSE';
-                pBtn.onclick = () => socket.emit(state.isPaused ? 'resume' : 'pause');
+                document.getElementById('admin-area').style.display = 'flex';
+                const pb = document.getElementById('pause-btn');
+                pb.textContent = s.isPaused ? 'RESUME' : 'PAUSE';
+                pb.onclick = () => socket.emit(s.isPaused ? 'resume' : 'pause');
             }
 
-            if (state.currentPlayer) {
-                document.getElementById('player-name').textContent = state.currentPlayer.name.toUpperCase();
-                document.getElementById('player-pos').textContent = state.currentPlayer.position;
+            if (s.currentPlayer) {
+                document.getElementById('p-name').textContent = s.currentPlayer.name.toUpperCase();
+                document.getElementById('p-pos').textContent = s.currentPlayer.position;
             }
 
-            document.getElementById('curr-bid').textContent = formatMoney(state.currentBid);
-            document.getElementById('bidder-info').textContent = state.currentBidder ? `By ${state.currentBidder}` : 'Starting price';
+            document.getElementById('curr-bid').textContent = formatM(s.currentBid);
+            document.getElementById('bidder-name').textContent = s.currentBidder ? `By ${s.currentBidder}` : 'Starting price';
 
-            const bidBtn = document.getElementById('bid-btn');
-            const nextVal = state.currentBid + 5;
-            bidBtn.textContent = `BID ${formatMoney(nextVal)}`;
-            bidBtn.disabled = (state.currentBidder === user.name || state.isPaused);
-            bidBtn.onclick = () => socket.emit('bid', nextVal);
+            const bb = document.getElementById('bid-btn');
+            const next = s.currentBid + 5;
+            bb.textContent = `BID ${formatM(next)}`;
+            bb.disabled = (s.currentBidder === user.name || s.isPaused);
+            bb.onclick = () => socket.emit('bid', next);
 
-            const me = state.players.find(p => p.name === user.name);
-            if (me) document.getElementById('my-budget').textContent = formatMoney(me.budget);
-
-            if (state.timerEnd !== lastTimerEnd) {
-                lastTimerEnd = state.timerEnd;
-                startCountdown(state.timerEnd, state.isPaused);
+            const me = s.players.find(x => x.name === user.name);
+            if (me) {
+                document.getElementById('u-budget').textContent = formatM(me.budget);
+                document.getElementById('c-gk').textContent = me.positions.GK + '/3';
+                document.getElementById('c-def').textContent = me.positions.DEF + '/5';
+                document.getElementById('c-mid').textContent = me.positions.MID + '/5';
+                document.getElementById('c-fwd').textContent = me.positions.FWD + '/5';
+                document.getElementById('c-total').textContent = me.teamSize + '/18';
             }
+
+            if (s.timerEnd !== lastT) { lastT = s.timerEnd; runT(s.timerEnd, s.isPaused); }
 
             if (user.isAuctionAdmin) {
-                const rem = Math.floor((state.timerEnd - Date.now()) / 1000);
-                const dBtn = document.getElementById('dismiss-btn');
-                if (!state.currentBidder && rem <= 5 && rem > 0) {
-                    dBtn.style.display = 'block';
-                    dBtn.onclick = () => socket.emit('dismiss');
-                } else {
-                    dBtn.style.display = 'none';
-                }
+                const rem = Math.floor((s.timerEnd - Date.now()) / 1000);
+                const db = document.getElementById('dismiss-btn');
+                if (!s.currentBidder && rem <= 5 && rem > 0) {
+                    db.style.display = 'block';
+                    db.onclick = () => socket.emit('dismiss');
+                } else db.style.display = 'none';
             }
         });
 
-        function startCountdown(end, paused) {
-            if (countdownInt) clearInterval(countdownInt);
-            if (paused) {
-                const rem = Math.max(0, Math.floor((end - Date.now()) / 1000));
-                document.getElementById('timer').textContent = rem + 's';
-                return;
-            }
-            countdownInt = setInterval(() => {
-                const rem = Math.max(0, Math.floor((end - Date.now()) / 1000));
+        function runT(e, p) {
+            if (tInt) clearInterval(tInt);
+            if (p) { const rem = Math.max(0, Math.floor((e - Date.now()) / 1000)); document.getElementById('timer').textContent = rem + 's'; return; }
+            tInt = setInterval(() => {
+                const rem = Math.max(0, Math.floor((e - Date.now()) / 1000));
                 const d = document.getElementById('timer');
                 d.textContent = rem + 's';
                 if (rem <= 3) d.className = 'stat-val urgent'; else d.className = 'stat-val';
-                if (rem <= 0) clearInterval(countdownInt);
+                if (rem <= 0) clearInterval(tInt);
             }, 100);
         }
 
-        function openCustomBid() {
-            const val = prompt("Enter amount in Lakhs (multiple of 5):");
-            const amt = parseInt(val);
-            if (!isNaN(amt) && amt % 5 === 0) socket.emit('bid', amt);
-            else if (val !== null) alert("Must be multiple of 5.");
+        function openCustom() {
+            const v = prompt("Enter amount in Lakhs (multiple of 5):");
+            const a = parseInt(v);
+            if (!isNaN(a) && a % 5 === 0) socket.emit('bid', a);
+            else if (v !== null) alert("Must be multiple of 5.");
         }
 
-        function emergencyEnd() {
-            if (prompt('Type "END" to confirm emergency termination:') === 'END') {
-                socket.emit('emergencyEnd', 'END');
-            }
-        }
+        function confirmEnd() { if (prompt('Type "END" to finish:') === 'END') socket.emit('emergencyEnd', 'END'); }
     </script>
 </body>
 </html>

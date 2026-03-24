@@ -1,27 +1,28 @@
 const { Chess } = require('chess.js');
-const Game = require('../models/Game');
 
 module.exports = (io) => {
     const ns = io.of('/chess');
-    const activeGames = new Map(); // gameId -> { chess, white, black, timers }
+    const activeGames = new Map();
 
     ns.on('connection', (socket) => {
-        socket.on('joinGame', async ({ gameId, player }) => {
+        socket.on('joinGame', ({ gameId, player }) => {
             socket.join(gameId);
+            socket.playerName = player;
             let g = activeGames.get(gameId);
 
             if (!g) {
-                // Try load from DB or create new
                 g = {
                     chess: new Chess(),
                     white: player,
                     black: null,
                     timers: { w: 600, b: 600 },
-                    lastMove: Date.now()
+                    lastMove: Date.now(),
+                    gameActive: true
                 };
                 activeGames.set(gameId, g);
             } else if (!g.black && g.white !== player) {
                 g.black = player;
+                g.lastMove = Date.now();
             }
 
             ns.to(gameId).emit('gameState', {
@@ -35,15 +36,19 @@ module.exports = (io) => {
 
         socket.on('move', ({ gameId, move }) => {
             const g = activeGames.get(gameId);
-            if (!g) return;
+            if (!g || !g.gameActive) return;
+
+            // Verify turn
+            const turnColor = g.chess.turn();
+            const turnPlayer = turnColor === 'w' ? g.white : g.black;
+            if (socket.playerName !== turnPlayer) return;
 
             try {
                 const result = g.chess.move(move);
                 if (result) {
                     const now = Date.now();
                     const diff = Math.floor((now - g.lastMove) / 1000);
-                    const turn = g.chess.turn() === 'w' ? 'b' : 'w'; // turn that just moved
-                    g.timers[turn] = Math.max(0, g.timers[turn] - diff);
+                    g.timers[turnColor] = Math.max(0, g.timers[turnColor] - diff);
                     g.lastMove = now;
 
                     ns.to(gameId).emit('moveMade', {
@@ -54,13 +59,37 @@ module.exports = (io) => {
                     });
 
                     if (g.chess.game_over()) {
+                        g.gameActive = false;
                         let res = 'Draw';
-                        if (g.chess.in_checkmate()) res = `Winner: ${g.chess.turn() === 'w' ? g.black : g.white}`;
+                        if (g.chess.in_checkmate()) {
+                            res = `Checkmate! Winner: ${socket.playerName}`;
+                        }
                         ns.to(gameId).emit('gameOver', { result: res });
                     }
                 }
             } catch (e) {
                 socket.emit('error', 'Invalid move');
+            }
+        });
+
+        socket.on('offerDraw', ({ gameId }) => {
+            socket.to(gameId).emit('drawOffered');
+        });
+
+        socket.on('acceptDraw', ({ gameId }) => {
+            const g = activeGames.get(gameId);
+            if (g) {
+                g.gameActive = false;
+                ns.to(gameId).emit('gameOver', { result: 'Draw by agreement' });
+            }
+        });
+
+        socket.on('resign', ({ gameId }) => {
+            const g = activeGames.get(gameId);
+            if (g) {
+                g.gameActive = false;
+                const winner = socket.playerName === g.white ? g.black : g.white;
+                ns.to(gameId).emit('gameOver', { result: `Game over. Winner: ${winner}` });
             }
         });
     });
