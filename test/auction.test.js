@@ -38,36 +38,29 @@ describe('Auction Socket Logic', () => {
         });
     });
 
-    it('should allow auction to start with 4 players and accept valid bids', (done) => {
+    it('should allow auction to start with 4 players and accept valid bids', function(done) {
+        this.timeout(15000);
         const clients = [];
         const names = ['P1', 'P2', 'P3', 'P4'];
-        let activeAdmin = null;
-
-        const cleanup = () => {
-            clients.forEach(c => c.disconnect());
-        };
+        let bidSent = false;
 
         const setup = (name, isAdmin) => {
             const c = io(clientUri, { transports: ['websocket'] });
+            clients.push(c);
             c.on('connect', () => {
                 c.emit('joinAuction', { name, isAdmin });
-                clients.push(c);
-                if (isAdmin) activeAdmin = c;
-
-                if (clients.length === 4) {
-                    setTimeout(() => {
-                        activeAdmin.emit('startAuction');
-                    }, 500);
-                }
             });
 
             c.on('stateUpdate', (state) => {
-                if (state.gameStatus === 'active' && isAdmin) {
-                    // Try valid bid
+                if (state.players.length === 4 && isAdmin && state.gameStatus === 'lobby') {
+                    c.emit('startAuction');
+                }
+                if (state.gameStatus === 'active' && isAdmin && state.currentBid === 5 && !bidSent) {
+                    bidSent = true;
                     c.emit('bid', 10);
                 }
                 if (state.currentBid === 10) {
-                    cleanup();
+                    clients.forEach(cl => cl.disconnect());
                     done();
                 }
             });

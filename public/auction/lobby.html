@@ -3,54 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lobby — Mejores Amigos</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+    <title>Mejores Amigos - Lobby</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #FFFFFF; font-family: 'Inter', sans-serif; min-height: 100vh; padding: 24px; display: flex; flex-direction: column; align-items: center; }
-        .lobby-card { width: 100%; max-width: 500px; background: #fff; border: 1px solid #EEEEEE; border-radius: 32px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); }
-        h1 { font-family: 'Syne'; font-size: 32px; margin-bottom: 8px; }
-        .status-msg { color: #666; font-size: 14px; margin-bottom: 32px; }
-        .p-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
-        .p-item { background: #F9F9FB; border: 1px solid #EEEEEE; padding: 16px 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
-        .btn { width: 100%; padding: 20px; border-radius: 18px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 16px; }
-        .btn-start { background: #111; color: #fff; display: none; }
-        .btn-start:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-exit { background: #F9F9FB; color: #666; border: 1px solid #EEEEEE; margin-top: 12px; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #111827; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+        .logo-round { border-radius: 50%; }
     </style>
 </head>
-<body>
-    <div class="lobby-card">
-        <h1>Auction Lobby</h1>
-        <div class="status-msg" id="msg">Waiting for players...</div>
-        <div class="p-list" id="p-list"></div>
-        <button class="btn btn-start" id="start-btn" disabled>START AUCTION</button>
-        <button class="btn btn-exit" onclick="location.href='/games.html'">EXIT</button>
+<body class="bg-gray-900 text-white min-h-screen p-4 md:p-8 font-inter">
+
+    <div class="max-w-5xl mx-auto space-y-8 animate-fade-in">
+
+        <!-- Top Navigation -->
+        <div class="flex justify-between items-center bg-gray-800/50 p-4 rounded-2xl border border-gray-700 backdrop-blur-md">
+            <div class="flex items-center gap-3">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo-round w-10 h-10 shadow-lg">
+                <div>
+                    <h1 class="font-bold text-lg leading-none">Mejores Amigos</h1>
+                    <span class="text-xs text-blue-400 font-mono">LOBBY ID: #MA2025</span>
+                </div>
+            </div>
+            <button onclick="location.href='/games'" class="px-4 py-2 bg-gray-700 hover:bg-red-600/80 rounded-lg text-sm font-bold transition-all border border-gray-600 hover:border-red-500">
+                Exit
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Main Lobby List -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Status Banner -->
+                <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700 shadow-xl text-center space-y-2 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                    <h2 class="text-3xl font-bold">Waiting Room</h2>
+                    <p id="lobbyStatus" class="text-blue-400 font-mono animate-pulse flex items-center justify-center gap-2">
+                        <span class="w-2 h-2 bg-blue-400 rounded-full"></span>
+                        Waiting for admin to start auction...
+                    </p>
+                </div>
+
+                <!-- Player List -->
+                <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
+                    <div class="p-4 bg-gray-800/80 border-b border-gray-700 flex justify-between items-center backdrop-blur-sm sticky top-0 z-10">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">👥</span>
+                            <h3 class="font-bold text-lg">Connected Players</h3>
+                        </div>
+                        <span class="px-3 py-1 bg-gray-900 rounded-lg text-sm font-mono text-gray-400 border border-gray-700">
+                            <span id="playerCount" class="text-white font-bold">0</span>/8
+                        </span>
+                    </div>
+                    <ul id="playerList" class="divide-y divide-gray-700 max-h-[500px] overflow-y-auto custom-scrollbar">
+                        <!-- JS injects players here -->
+                    </ul>
+                </div>
+
+                <!-- Admin Controls Area -->
+                <div id="adminControls" class="hidden space-y-4">
+                    <div class="bg-gradient-to-r from-gray-800 to-gray-900 p-6 rounded-2xl border border-yellow-500/30 shadow-2xl relative overflow-hidden">
+                        <div class="absolute -right-10 -top-10 text-[10rem] opacity-5 select-none">👑</div>
+                        <div class="relative z-10">
+                            <h4 class="text-yellow-500 text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <span>👑</span> Admin Command Center
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <button id="startAuctionBtn" disabled class="py-4 px-6 bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-xl font-bold shadow-lg transition-all transform active:scale-95 flex flex-col items-center justify-center gap-1 group">
+                                    <span class="text-xl group-disabled:opacity-50">▶️ START AUCTION</span>
+                                    <span id="startReqMsg" class="text-xs font-normal opacity-70">Req: Min 4 Players</span>
+                                </button>
+                                <button id="resetAuctionBtn" class="py-4 px-6 bg-gray-700 hover:bg-red-600 rounded-xl font-bold text-gray-300 hover:text-white shadow-lg transition-all border border-gray-600 flex flex-col items-center justify-center gap-1">
+                                    <span class="text-xl">🛑 RESET DATA</span>
+                                    <span class="text-xs font-normal opacity-70">Clear DB & Kick All</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Info -->
+            <div class="space-y-6">
+                <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl">
+                    <h3 class="font-bold text-gray-400 mb-4 text-sm uppercase tracking-wider">Quick Rules</h3>
+                    <ul class="space-y-4 text-sm text-gray-300">
+                        <li class="flex gap-3 items-start">
+                            <span class="bg-gray-700 p-1 rounded text-xs min-w-[24px] text-center">1</span>
+                            <span>Each player gets <strong>₹15.00 Crore</strong> budget.</span>
+                        </li>
+                        <li class="flex gap-3 items-start">
+                            <span class="bg-gray-700 p-1 rounded text-xs min-w-[24px] text-center">2</span>
+                            <span>Must buy <strong>18 players</strong> total.</span>
+                        </li>
+                        <li class="flex gap-3 items-start">
+                            <span class="bg-gray-700 p-1 rounded text-xs min-w-[24px] text-center">3</span>
+                            <span><strong>10s</strong> timer resets on every new bid.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const user = JSON.parse(localStorage.getItem('auctionUser'));
         if(!user) location.href='/auction/login';
+
         const socket = io('/auction');
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
+
         socket.on('stateUpdate', (s) => {
-            const list = document.getElementById('p-list');
-            list.innerHTML = s.players.map(p => `<div class="p-item"><span>${p.isAdmin ? '👑 ' : ''}${p.name}</span><div class="status-dot"></div></div>`).join('');
-            const btn = document.getElementById('start-btn');
-            if(user.isAuctionAdmin) {
-                btn.style.display = 'block';
-                btn.disabled = s.players.length < 4;
-                document.getElementById('msg').textContent = `Ready with ${s.players.length} players`;
-            } else {
-                document.getElementById('msg').textContent = `${s.players.length}/8 players joined.`;
+            const list = document.getElementById('playerList');
+            document.getElementById('playerCount').textContent = s.players.length;
+
+            list.innerHTML = s.players.map(p => `
+                <li class="p-4 flex justify-between items-center border-b border-gray-700">
+                    <span class="font-bold ${p.name === user.name ? 'text-blue-400' : ''}">
+                        ${p.name} ${p.isAdmin ? '👑' : ''}
+                    </span>
+                    <div class="flex gap-2">
+                        ${p.name === user.name ? '<span class="text-[10px] bg-blue-900 px-2 py-1 rounded">YOU</span>' : ''}
+                        ${(user.isAuctionAdmin && p.name !== user.name) ? `<button onclick="removeUser('${p.name}')" class="text-red-500 hover:text-red-400 text-xs">REMOVE</button>` : ''}
+                    </div>
+                </li>
+            `).join('');
+
+            if (user.isAuctionAdmin) {
+                document.getElementById('adminControls').classList.remove('hidden');
+                const startBtn = document.getElementById('startAuctionBtn');
+                startBtn.disabled = s.players.length < 4;
+                document.getElementById('startReqMsg').textContent = s.players.length < 4 ? `Req: Min 4 Players (Have ${s.players.length})` : "All Ready!";
             }
-            if(s.gameStatus === 'active') location.href = '/auction/index';
+
+            if(s.gameStatus === 'active') location.href = '/auction/game';
         });
-        socket.on('error', (m) => { alert(m); location.href='/games.html'; });
-        document.getElementById('start-btn').onclick = () => socket.emit('startAuction');
+
+        function removeUser(name) {
+            if(confirm('Remove ' + name + '?')) socket.emit('removeUser', name);
+        }
+
+        document.getElementById('startAuctionBtn').onclick = () => socket.emit('startAuction');
+        document.getElementById('resetAuctionBtn').onclick = () => { if(confirm('Reset all?')) socket.emit('resetLobby'); };
+
+        socket.on('error', (m) => { alert(m); location.href='/games'; });
+        socket.on('lobbyReset', () => location.href='/games');
     </script>
 </body>
 </html>

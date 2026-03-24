@@ -3,10 +3,10 @@ const fs = require('fs');
 const path = require('path');
 
 const MAX_POS = { GK: 3, DEF: 5, MID: 5, FWD: 5 };
-const START_BUDGET = 1500; // 15 Crore
-const START_BID = 5; // 5 Lakh
-const BID_INCREMENT = 5; // multiples of 5 Lakh
-const TIMER_DURATION = 10000; // 10 seconds
+const START_BUDGET = 1500;
+const START_BID = 5;
+const BID_INCREMENT = 5;
+const TIMER_DURATION = 10000;
 
 module.exports = (io) => {
     const ns = io.of('/auction');
@@ -21,11 +21,10 @@ module.exports = (io) => {
     let isPaused = false;
     let timeLeftOnPause = 0;
 
-    // Admin Management
     let adminDisconnectTimeout = null;
     let adminInactivityTimeout = null;
-    const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes
-    const DISCONNECT_GRACE = 60 * 1000; // 60 seconds
+    const INACTIVITY_LIMIT = 5 * 60 * 1000;
+    const DISCONNECT_GRACE = 60 * 1000;
 
     function shuffle(a) {
         const array = [...a];
@@ -63,10 +62,12 @@ module.exports = (io) => {
             players: players.map(p => ({
                 name: p.name,
                 budget: p.budget,
-                team: p.team
+                team: p.team,
+                positions: p.positions,
+                isAdmin: p.isAdmin
             }))
         };
-        fs.writeFileSync(path.join(__dirname, '../last_auction.json'), JSON.stringify(results, null, 2));
+        fs.writeFileSync(path.join(__dirname, '../last_auction_stats.json'), JSON.stringify(results, null, 2));
     }
 
     function resetAdminInactivity() {
@@ -86,7 +87,6 @@ module.exports = (io) => {
     function promoteNextAdmin() {
         const currentAdmin = players.find(p => p.isAdmin);
         if (currentAdmin) currentAdmin.isAdmin = false;
-
         const nextAdmin = players.find(p => p.socketId && !p.isAdmin);
         if (nextAdmin) {
             nextAdmin.isAdmin = true;
@@ -146,27 +146,28 @@ module.exports = (io) => {
             broadcast();
         });
 
-        socket.on('disconnect', () => {
-            const p = players.find(x => x.socketId === socket.id);
-            if (p) {
-                p.socketId = null;
-                if (gameStatus === 'lobby') {
-                    players = players.filter(x => x.name !== p.name);
-                } else if (p.isAdmin) {
-                    adminDisconnectTimeout = setTimeout(() => {
-                        triggerEmergencyEnd();
-                    }, DISCONNECT_GRACE);
+        socket.on('removeUser', (targetName) => {
+            const admin = players.find(x => x.socketId === socket.id);
+            if (admin && admin.isAdmin) {
+                const target = players.find(x => x.name === targetName);
+                if (target) {
+                    if (target.socketId) {
+                        ns.to(target.socketId).emit('error', 'You have been removed by admin.');
+                        io.of('/auction').sockets.get(target.socketId)?.disconnect();
+                    }
+                    players = players.filter(x => x.name !== targetName);
+                    broadcast();
                 }
-                broadcast();
             }
         });
 
         socket.on('startAuction', () => {
             const p = players.find(x => x.socketId === socket.id);
-            if (p && p.isAdmin && gameStatus === 'lobby' && players.length >= 2) { // Changed to 2 for easier testing as per common requests, but requested 4.
-                // Resetting to 4 as per prompt: "game auction minumum 4 playerd to start"
-                if(players.length < 4) return;
-
+            if (p && p.isAdmin && gameStatus === 'lobby') {
+                if (players.length < 4) {
+                    socket.emit('notification', { message: 'Min 4 players required!', type: 'error' });
+                    return;
+                }
                 auctionQueue = [
                     ...shuffle(PLAYER_LIST.filter(x => x.position === 'GK')),
                     ...shuffle(PLAYER_LIST.filter(x => x.position === 'DEF')),
@@ -198,7 +199,7 @@ module.exports = (io) => {
 
             const emptySlots = 18 - p.team.length;
             if (p.budget - amount < (emptySlots - 1) * 10) {
-                 socket.emit('notification', { message: 'Insufficient reserve!', type: 'error' });
+                 socket.emit('notification', { message: 'Reserve 10L/slot required!', type: 'error' });
                  return;
             }
             if (p.budget < amount) return;
@@ -256,6 +257,15 @@ module.exports = (io) => {
                 triggerEmergencyEnd();
             }
         });
+
+        socket.on('resetLobby', () => {
+            const p = players.find(x => x.socketId === socket.id);
+            if (p && p.isAdmin && gameStatus === 'lobby') {
+                players = [];
+                ns.emit('lobbyReset');
+                broadcast();
+            }
+        });
     });
 
     setInterval(() => {
@@ -266,7 +276,7 @@ module.exports = (io) => {
                 winner.budget -= currentBid;
                 winner.team.push({ ...player, price: currentBid });
                 winner.positions[player.position]++;
-                ns.emit('notification', { message: `✅ ${player.name} SOLD!`, type: 'success' });
+                ns.emit('notification', { message: '✅ ' + player.name + ' SOLD!', type: 'success' });
             }
 
             currentIdx++;

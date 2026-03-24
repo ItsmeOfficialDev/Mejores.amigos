@@ -5,23 +5,47 @@ module.exports = (io) => {
     ns.on('connection', (socket) => {
         socket.on('joinGame', ({ gameId, player }) => {
             socket.join(gameId);
+            socket.playerName = player;
             let g = games.get(gameId);
+
             if (!g) {
-                g = { board: Array(9).fill(''), X: player, O: null, turn: 'X', active: true };
+                // Randomly assign first player as X or O
+                const isX = Math.random() > 0.5;
+                g = {
+                    board: Array(9).fill(''),
+                    X: isX ? player : null,
+                    O: isX ? null : player,
+                    turn: 'X',
+                    active: true,
+                    scores: { X: 0, O: 0 }
+                };
                 games.set(gameId, g);
-            } else if (!g.O && g.X !== player) {
-                g.O = player;
+            } else {
+                // Join as the empty slot
+                if (g.X === null && g.O !== player) g.X = player;
+                else if (g.O === null && g.X !== player) g.O = player;
             }
-            ns.to(gameId).emit('gameState', g);
+
+            ns.to(gameId).emit('gameState', {
+                board: g.board,
+                X: g.X,
+                O: g.O,
+                turn: g.turn,
+                active: g.active,
+                scores: g.scores
+            });
         });
 
         socket.on('move', ({ gameId, index, symbol }) => {
             const g = games.get(gameId);
-            if (g && g.active && g.board[index] === '' && g.turn === symbol) {
+            if (g && g.active && g.X && g.O && g.board[index] === '' && g.turn === symbol) {
+                // Check if current socket is the player for this symbol
+                const expectedPlayer = symbol === 'X' ? g.X : g.O;
+                if (socket.playerName !== expectedPlayer) return;
+
                 g.board[index] = symbol;
                 g.turn = symbol === 'X' ? 'O' : 'X';
 
-                // Check win
                 const winPatterns = [
                     [0,1,2],[3,4,5],[6,7,8],
                     [0,3,6],[1,4,7],[2,5,8],
@@ -38,6 +62,7 @@ module.exports = (io) => {
 
                 if (winner) {
                     g.active = false;
+                    g.scores[winner]++;
                     ns.to(gameId).emit('gameState', g);
                     ns.to(gameId).emit('gameOver', { winner });
                 } else if (!g.board.includes('')) {
