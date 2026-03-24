@@ -1,12 +1,11 @@
 const mongoose = require('mongoose');
 
 const logSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  userName: String,
-  action: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
-  details: { type: Object, default: {} },
-  ipAddress: String
+    userId: String,
+    userName: String,
+    action: String, // 'join', 'play_chess', 'bid', etc.
+    details: Object,
+    timestamp: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('Log', logSchema);

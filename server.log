@@ -1,17 +1,5 @@
-
-> app@1.0.0 start
-> node index.js
-
-[dotenv@17.3.1] injecting env (3) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
-Server running on port 3000
-DB Connection Failed (Process will continue in memory): connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
-MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
-    at Topology.selectServer (/app/node_modules/mongodb/lib/sdam/topology.js:347:38)
-    at async Topology._connect (/app/node_modules/mongodb/lib/sdam/topology.js:220:28)
-    at async Topology.connect (/app/node_modules/mongodb/lib/sdam/topology.js:171:13)
-    at async topologyConnect (/app/node_modules/mongodb/lib/mongo_client.js:258:17)
-    at async MongoClient._connect (/app/node_modules/mongodb/lib/mongo_client.js:271:13)
-    at async MongoClient.connect (/app/node_modules/mongodb/lib/mongo_client.js:196:13)
-    at async MongoClient.connect (/app/node_modules/mongodb/lib/mongo_client.js:438:16)
-    at async /app/node_modules/connect-mongo/dist/index.cjs:348:24
-Terminated
+[dotenv@17.3.1] injecting env (3) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+Server running on port 3001

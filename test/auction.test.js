@@ -12,7 +12,7 @@ describe('Auction Socket Logic', () => {
         const app = express();
         server = http.createServer(app);
         ioServer = new Server(server);
-        auctionModule(ioServer);
+        auctionModule(ioServer, () => {});
         server.listen(() => {
             const port = server.address().port;
             clientUri = `http://localhost:${port}/auction`;

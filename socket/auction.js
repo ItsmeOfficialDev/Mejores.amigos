@@ -8,7 +8,7 @@ const START_BID = 5;
 const BID_INCREMENT = 5;
 const TIMER_DURATION = 10000;
 
-module.exports = (io) => {
+module.exports = (io, trackActivity) => {
     const ns = io.of('/auction');
 
     let players = [];
@@ -90,7 +90,8 @@ module.exports = (io) => {
         const nextAdmin = players.find(p => p.socketId && !p.isAdmin);
         if (nextAdmin) {
             nextAdmin.isAdmin = true;
-            ns.emit('notification', { message: `👑 ${nextAdmin.name} is now the Admin.`, type: 'info' });
+            ns.emit('notification', { message: '👑 ' + nextAdmin.name + ' is now the Admin.', type: 'info' });
+            trackActivity(nextAdmin.name, 'auction_admin_promoted');
         }
         broadcast();
     }
@@ -112,6 +113,7 @@ module.exports = (io) => {
         }
         gameStatus = 'finished';
         saveResults();
+        trackActivity('System', 'auction_emergency_end');
         broadcast();
     }
 
@@ -137,9 +139,11 @@ module.exports = (io) => {
                     positions: { GK: 0, DEF: 0, MID: 0, FWD: 0 }
                 };
                 players.push(p);
+                trackActivity(name, 'auction_joined');
             } else {
                 p.socketId = socket.id;
                 if (isAdmin) p.isAdmin = true;
+                trackActivity(name, 'auction_reconnected');
             }
 
             if (p.isAdmin) resetAdminInactivity();
@@ -156,6 +160,7 @@ module.exports = (io) => {
                         io.of('/auction').sockets.get(target.socketId)?.disconnect();
                     }
                     players = players.filter(x => x.name !== targetName);
+                    trackActivity(admin.name, 'auction_remove_user', { target: targetName });
                     broadcast();
                 }
             }
@@ -180,6 +185,7 @@ module.exports = (io) => {
                 currentBidder = null;
                 timerEnd = Date.now() + TIMER_DURATION;
                 resetAdminInactivity();
+                trackActivity(p.name, 'auction_started');
                 broadcast();
             }
         });
@@ -208,6 +214,7 @@ module.exports = (io) => {
             currentBidder = p.name;
             timerEnd = Date.now() + TIMER_DURATION;
             if (p.isAdmin) resetAdminInactivity();
+            trackActivity(p.name, 'auction_bid', { player: player.name, amount });
             broadcast();
         });
 
@@ -217,6 +224,7 @@ module.exports = (io) => {
                 isPaused = true;
                 timeLeftOnPause = Math.max(0, timerEnd - Date.now());
                 resetAdminInactivity();
+                trackActivity(p.name, 'auction_paused');
                 broadcast();
             }
         });
@@ -227,6 +235,7 @@ module.exports = (io) => {
                 isPaused = false;
                 timerEnd = Date.now() + timeLeftOnPause;
                 resetAdminInactivity();
+                trackActivity(p.name, 'auction_resumed');
                 broadcast();
             }
         });
@@ -236,6 +245,8 @@ module.exports = (io) => {
             if (p && p.isAdmin && gameStatus === 'active' && !currentBidder) {
                 const rem = Math.floor((timerEnd - Date.now()) / 1000);
                 if (rem <= 5) {
+                    const player = auctionQueue[currentIdx];
+                    trackActivity(p.name, 'auction_dismiss_player', { player: player.name });
                     currentIdx++;
                     if (currentIdx >= auctionQueue.length) {
                         gameStatus = 'finished';
@@ -254,6 +265,7 @@ module.exports = (io) => {
         socket.on('emergencyEnd', (confirm) => {
             const p = players.find(x => x.socketId === socket.id);
             if (p && p.isAdmin && confirm === 'END') {
+                trackActivity(p.name, 'auction_manual_emergency_end');
                 triggerEmergencyEnd();
             }
         });
@@ -263,6 +275,7 @@ module.exports = (io) => {
             if (p && p.isAdmin && gameStatus === 'lobby') {
                 players = [];
                 ns.emit('lobbyReset');
+                trackActivity(p.name, 'auction_lobby_reset');
                 broadcast();
             }
         });
@@ -277,6 +290,7 @@ module.exports = (io) => {
                 winner.team.push({ ...player, price: currentBid });
                 winner.positions[player.position]++;
                 ns.emit('notification', { message: '✅ ' + player.name + ' SOLD!', type: 'success' });
+                trackActivity(winner.name, 'auction_won_player', { player: player.name, price: currentBid });
             }
 
             currentIdx++;

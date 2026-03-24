@@ -1,4 +1,4 @@
-module.exports = (io) => {
+module.exports = (io, trackActivity) => {
     const ns = io.of('/tictactoe');
     const games = new Map();
 
@@ -9,7 +9,6 @@ module.exports = (io) => {
             let g = games.get(gameId);
 
             if (!g) {
-                // Randomly assign first player as X or O
                 const isX = Math.random() > 0.5;
                 g = {
                     board: Array(9).fill(''),
@@ -20,10 +19,16 @@ module.exports = (io) => {
                     scores: { X: 0, O: 0 }
                 };
                 games.set(gameId, g);
+                trackActivity(player, 'ttt_created', { gameId });
             } else {
-                // Join as the empty slot
-                if (g.X === null && g.O !== player) g.X = player;
-                else if (g.O === null && g.X !== player) g.O = player;
+                if (g.X === null && g.O !== player) {
+                    g.X = player;
+                    trackActivity(player, 'ttt_joined', { gameId, as: 'X' });
+                }
+                else if (g.O === null && g.X !== player) {
+                    g.O = player;
+                    trackActivity(player, 'ttt_joined', { gameId, as: 'O' });
+                }
             }
 
             ns.to(gameId).emit('gameState', {
@@ -39,7 +44,6 @@ module.exports = (io) => {
         socket.on('move', ({ gameId, index, symbol }) => {
             const g = games.get(gameId);
             if (g && g.active && g.X && g.O && g.board[index] === '' && g.turn === symbol) {
-                // Check if current socket is the player for this symbol
                 const expectedPlayer = symbol === 'X' ? g.X : g.O;
                 if (socket.playerName !== expectedPlayer) return;
 
@@ -63,10 +67,12 @@ module.exports = (io) => {
                 if (winner) {
                     g.active = false;
                     g.scores[winner]++;
+                    trackActivity(socket.playerName, 'ttt_won', { gameId });
                     ns.to(gameId).emit('gameState', g);
                     ns.to(gameId).emit('gameOver', { winner });
                 } else if (!g.board.includes('')) {
                     g.active = false;
+                    trackActivity(socket.playerName, 'ttt_draw', { gameId });
                     ns.to(gameId).emit('gameState', g);
                     ns.to(gameId).emit('gameOver', { winner: 'Draw' });
                 } else {
@@ -81,6 +87,7 @@ module.exports = (io) => {
                 g.board = Array(9).fill('');
                 g.turn = 'X';
                 g.active = true;
+                trackActivity(socket.playerName, 'ttt_reset', { gameId });
                 ns.to(gameId).emit('gameState', g);
             }
         });
