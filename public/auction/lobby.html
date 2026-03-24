@@ -3,107 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auction Lobby — Mejores Amigos</title>
+    <title>Lobby — Mejores Amigos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #FFFFFF;
-            --primary: #111111;
-            --accent: #F5B942;
-            --surface: #F9F9FB;
-            --text-dim: #666666;
-            --border: #EEEEEE;
-            --green: #4ADE80;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--primary); min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-        .header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
-        .logo img { width: 36px; height: 36px; border-radius: 8px; }
-        .logo span { font-family: 'Syne'; font-size: 18px; font-weight: 800; }
-
-        .container { flex: 1; padding: 32px 24px; display: flex; flex-direction: column; max-width: 500px; margin: 0 auto; width: 100%; }
-        h1 { font-family: 'Syne'; font-size: 32px; font-weight: 800; margin-bottom: 8px; text-align: center; }
-        .sub-txt { text-align: center; color: var(--text-dim); font-size: 14px; margin-bottom: 40px; }
-
-        .p-list { width: 100%; display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; flex: 1; overflow-y: auto; }
-        .p-card {
-            background: #fff; border: 1px solid var(--border); padding: 18px 20px; border-radius: 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            animation: fadeIn 0.4s ease-out backwards;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .p-name { font-weight: 700; font-size: 15px; }
-        .p-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px rgba(74, 222, 128, 0.4); }
-
-        .controls { width: 100%; display: flex; flex-direction: column; gap: 12px; }
-        .btn { width: 100%; padding: 20px; border-radius: 18px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .btn-start { background: var(--primary); color: #fff; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #FFFFFF; font-family: 'Inter', sans-serif; min-height: 100vh; padding: 24px; display: flex; flex-direction: column; align-items: center; }
+        .lobby-card { width: 100%; max-width: 500px; background: #fff; border: 1px solid #EEEEEE; border-radius: 32px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); }
+        h1 { font-family: 'Syne'; font-size: 32px; margin-bottom: 8px; }
+        .status-msg { color: #666; font-size: 14px; margin-bottom: 32px; }
+        .p-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+        .p-item { background: #F9F9FB; border: 1px solid #EEEEEE; padding: 16px 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
+        .btn { width: 100%; padding: 20px; border-radius: 18px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 16px; }
+        .btn-start { background: #111; color: #fff; display: none; }
         .btn-start:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-exit { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
-        .btn-red { background: #FF4D4D; color: #fff; display: none; margin-top: 10px; padding: 12px; font-size: 13px; }
+        .btn-exit { background: #F9F9FB; color: #666; border: 1px solid #EEEEEE; margin-top: 12px; }
     </style>
 </head>
 <body>
-    <header class="header">
-        <a href="/hub.html" class="logo">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
-            <span>Mejores Amigos</span>
-        </a>
-    </header>
-
-    <main class="container">
+    <div class="lobby-card">
         <h1>Auction Lobby</h1>
-        <div class="sub-txt" id="status-msg">Waiting for participants...</div>
-
+        <div class="status-msg" id="msg">Waiting for players...</div>
         <div class="p-list" id="p-list"></div>
-
-        <div class="controls">
-            <button class="btn btn-start" id="start-btn" disabled>START AUCTION</button>
-            <button class="btn btn-red" id="reset-btn">RESET ROOM</button>
-            <button class="btn btn-exit" onclick="location.href='/hub.html'">EXIT TO HUB</button>
-        </div>
-    </main>
+        <button class="btn btn-start" id="start-btn" disabled>START AUCTION</button>
+        <button class="btn btn-exit" onclick="location.href='/games.html'">EXIT</button>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        if(!user) location.href='/index.html';
-
+        const user = JSON.parse(localStorage.getItem('auctionUser'));
+        if(!user) location.href='/auction/login';
         const socket = io('/auction');
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
-
-        socket.on('stateUpdate', (state) => {
+        socket.on('stateUpdate', (s) => {
             const list = document.getElementById('p-list');
-            list.innerHTML = state.players.map((p, i) => `
-                <div class="p-card" style="animation-delay: ${i * 0.05}s">
-                    <span class="p-name">${p.isAdmin ? '👑 ' : ''}${p.name}</span>
-                    <div class="p-dot"></div>
-                </div>
-            `).join('');
-
-            const startBtn = document.getElementById('start-btn');
+            list.innerHTML = s.players.map(p => `<div class="p-item"><span>${p.isAdmin ? '👑 ' : ''}${p.name}</span><div class="status-dot"></div></div>`).join('');
+            const btn = document.getElementById('start-btn');
             if(user.isAuctionAdmin) {
-                startBtn.style.display = 'block';
-                startBtn.disabled = state.players.length < 4;
-                document.getElementById('status-msg').textContent = `Ready to start with ${state.players.length} players`;
+                btn.style.display = 'block';
+                btn.disabled = s.players.length < 4;
+                document.getElementById('msg').textContent = `Ready with ${s.players.length} players`;
             } else {
-                document.getElementById('status-msg').textContent = `${state.players.length}/8 players joined. Waiting for admin...`;
+                document.getElementById('msg').textContent = `${s.players.length}/8 players joined.`;
             }
-
-            if(state.gameStatus === 'active') location.href = '/auction/index.html';
+            if(s.gameStatus === 'active') location.href = '/auction/index';
         });
-
+        socket.on('error', (m) => { alert(m); location.href='/games.html'; });
         document.getElementById('start-btn').onclick = () => socket.emit('startAuction');
-        const resetBtn = document.getElementById('reset-btn');
-        if(user.isAuctionAdmin) {
-            resetBtn.style.display = 'block';
-            resetBtn.onclick = () => { if(confirm('Wipe lobby?')) socket.emit('resetLobby'); };
-        }
-        socket.on('lobbyReset', () => { location.href='/hub.html'; });
     </script>
 </body>
 </html>

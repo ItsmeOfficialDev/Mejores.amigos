@@ -5,122 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Champions — Mejores Amigos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <style>
-        :root {
-            --bg: #FFFFFF;
-            --primary: #111111;
-            --accent: #F5B942;
-            --surface: #F9F9FB;
-            --text-dim: #666666;
-            --border: #EEEEEE;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--primary); min-height: 100vh; display: flex; flex-direction: column; }
-
-        .header { padding: 48px 24px 24px; text-align: center; }
-        h1 { font-family: 'Syne'; font-size: 42px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 8px; }
-        .sub-head { color: var(--text-dim); font-weight: 600; font-size: 15px; text-transform: uppercase; letter-spacing: 2px; }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #FFFFFF; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        .header { padding: 40px 24px 24px; text-align: center; }
+        h1 { font-family: 'Syne'; font-size: 38px; font-weight: 800; letter-spacing: -1.5px; }
         .container { flex: 1; width: 100%; max-width: 800px; margin: 0 auto; padding: 24px; }
-
-        .results-box { background: #fff; border: 1px solid var(--border); border-radius: 32px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); }
-
-        .selector-wrap { position: relative; margin-bottom: 32px; }
-        .team-selector {
-            width: 100%; padding: 20px 24px; border-radius: 20px; border: 1px solid var(--border);
-            background: var(--surface); font-size: 16px; font-weight: 700; outline: none; appearance: none;
-            cursor: pointer; transition: 0.3s;
-        }
-        .team-selector:focus { border-color: var(--primary); background: #fff; }
-
-        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-        .stat-card { background: var(--surface); padding: 24px 12px; border-radius: 24px; text-align: center; border: 1px solid var(--border); }
-        .stat-val { font-size: 20px; font-weight: 800; display: block; color: var(--primary); }
-        .stat-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.5px; margin-top: 4px; }
-
-        .table-wrap { overflow-x: auto; border-radius: 20px; border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: collapse; background: #fff; }
-        th { text-align: left; font-size: 11px; text-transform: uppercase; color: var(--text-dim); padding: 20px 16px; border-bottom: 1px solid var(--border); background: var(--surface); }
-        td { padding: 18px 16px; border-bottom: 1px solid var(--border); font-size: 15px; font-weight: 500; }
-
-        .pos-badge { font-weight: 800; font-size: 10px; padding: 6px 10px; border-radius: 8px; background: var(--surface); color: var(--primary); margin-right: 12px; border: 1px solid var(--border); }
-        .alloc-tag { font-size: 11px; color: var(--accent); font-weight: 700; margin-left: 8px; }
-
-        .btn-home {
-            display: flex; align-items: center; justify-content: center; gap: 12px;
-            width: 100%; max-width: 320px; margin: 48px auto; background: var(--primary); color: #fff;
-            padding: 22px; border-radius: 24px; text-decoration: none; font-weight: 700; font-size: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); transition: 0.3s;
-        }
-        .btn-home:hover { transform: translateY(-4px); }
-
-        @media (max-width: 600px) {
-            h1 { font-size: 32px; }
-            .results-box { padding: 20px; border-radius: 24px; }
-            .summary-grid { gap: 10px; }
-            .stat-val { font-size: 16px; }
-        }
+        .results-box { background: #fff; border: 1px solid #EEEEEE; border-radius: 32px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); }
+        .team-selector { width: 100%; padding: 18px 20px; border-radius: 20px; border: 1px solid #EEEEEE; background: #F9F9FB; font-size: 16px; font-weight: 700; outline: none; cursor: pointer; margin-bottom: 24px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+        .stat-card { background: #F9F9FB; padding: 24px 12px; border-radius: 24px; text-align: center; border: 1px solid #EEEEEE; }
+        .stat-val { font-size: 18px; font-weight: 800; display: block; }
+        .stat-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: #666; margin-top: 4px; }
+        .table-wrap { overflow-x: auto; border-radius: 20px; border: 1px solid #EEEEEE; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 11px; text-transform: uppercase; color: #666; padding: 16px; border-bottom: 1px solid #EEEEEE; background: #F9F9FB; }
+        td { padding: 16px; border-bottom: 1px solid #EEEEEE; font-size: 14px; font-weight: 500; }
+        .btn-home { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; max-width: 320px; margin: 40px auto; background: #111; color: #fff; padding: 20px; border-radius: 24px; text-decoration: none; font-weight: 700; }
+        .action-row { display: flex; gap: 12px; margin-bottom: 20px; }
+        .btn-act { flex: 1; padding: 14px; border-radius: 40px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 13px; }
+        .btn-pdf { background: #F5B942; color: #111; }
+        .btn-stats { background: #F9F9FB; border: 1px solid #EEEEEE; color: #111; }
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="sub-head">Mejores Amigos</div>
-        <h1>Champions</h1>
-    </header>
-
+    <header class="header"><h1>Champions</h1></header>
     <div class="container">
+        <div class="action-row">
+            <button class="btn-act btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> PDF Report</button>
+            <button class="btn-act btn-stats" onclick="loadLastGame()"><i class="fas fa-history"></i> Last Game</button>
+        </div>
         <div class="results-box">
-            <div class="selector-wrap">
-                <select id="userSelector" class="team-selector"></select>
-            </div>
-
+            <select id="userSelector" class="team-selector"></select>
             <div class="summary-grid" id="summary"></div>
-
             <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>Pos</th>
-                            <th style="text-align:right;">Price</th>
-                        </tr>
-                    </thead>
-                    <tbody id="playerBody"></tbody>
-                </table>
+                <table><thead><tr><th>Player</th><th>Pos</th><th style="text-align:right;">Price</th></tr></thead><tbody id="playerBody"></tbody></table>
             </div>
         </div>
-
-        <a href="/hub.html" class="btn-home">
-            <i class="fas fa-house"></i>
-            BACK TO HUB
-        </a>
+        <a href="/hub.html" class="btn-home"><i class="fas fa-house"></i> HUB</a>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io('/auction');
-        const user = JSON.parse(localStorage.getItem('mejoresAmigosUser'));
-        if(!user) window.location.href = '/index.html';
-
+        const user = JSON.parse(localStorage.getItem('auctionUser'));
         let players = [];
         let selected = null;
-
         function formatM(l) { return l < 100 ? `₹${l} Lakh` : `₹${(l/100).toFixed(2)} Crore`; }
 
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
-
         socket.on('stateUpdate', (s) => {
             players = s.players;
             const sel = document.getElementById('userSelector');
             const cur = sel.value || user.name;
-
-            // Map players to options
             sel.innerHTML = players.map(p => `<option value="${p.name}">${p.name}'s Squad</option>`).join('');
             sel.value = cur;
-
             selected = players.find(x => x.name === cur);
             render();
         });
@@ -133,33 +76,34 @@
         function render() {
             if (!selected) return;
             const team = selected.team || [];
-
             document.getElementById('summary').innerHTML = `
-                <div class="stat-card">
-                    <span class="stat-val">${formatM(selected.budget)}</span>
-                    <span class="stat-lbl">Budget</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-val">${formatM(1500 - selected.budget)}</span>
-                    <span class="stat-lbl">Spent</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-val">${team.length}/18</span>
-                    <span class="stat-lbl">Squad</span>
-                </div>
+                <div class="stat-card"><span class="stat-val">${formatM(selected.budget)}</span><span class="stat-lbl">Budget</span></div>
+                <div class="stat-card"><span class="stat-val">${formatM(1500 - selected.budget)}</span><span class="stat-lbl">Spent</span></div>
+                <div class="stat-card"><span class="stat-val">${team.length}/18</span><span class="stat-lbl">Squad</span></div>
             `;
-
             document.getElementById('playerBody').innerHTML = team.map(p => `
-                <tr>
-                    <td>
-                        <span class="pos-badge">${p.position}</span>
-                        ${p.name}
-                        ${p.random ? '<span class="alloc-tag">(Allocated)</span>' : ''}
-                    </td>
-                    <td>${p.position}</td>
-                    <td style="font-weight:800; text-align:right;">${formatM(p.price)}</td>
-                </tr>
+                <tr><td><b>${p.name}</b>${p.random?' <small>(Alloc)</small>':''}</td><td>${p.position}</td><td style="font-weight:800; text-align:right;">${formatM(p.price)}</td></tr>
             `).join('');
+        }
+
+        async function loadLastGame() {
+            try {
+                const res = await fetch('/api/last-auction');
+                const data = await res.json();
+                players = data.players;
+                document.getElementById('userSelector').innerHTML = players.map(p => `<option value="${p.name}">${p.name}'s Last Squad</option>`).join('');
+                selected = players[0];
+                render();
+                alert('Showing stats from last session (' + new Date(data.date).toLocaleDateString() + ')');
+            } catch(e) { alert('No last game data found.'); }
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text(`${selected.name}'s Squad Report`, 20, 20);
+            doc.autoTable({ startY: 30, head: [['Player', 'Pos', 'Price']], body: selected.team.map(p => [p.name, p.position, formatM(p.price)]) });
+            doc.save('squad_report.pdf');
         }
     </script>
 </body>

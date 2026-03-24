@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Games — Mejores Amigos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: #FFFFFF; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+        .header { padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #EEEEEE; background: #FFFFFF; }
+        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #111111; }
+        .logo img { width: 40px; height: 40px; border-radius: 10px; }
+        .logo span { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
+
+        .back-btn { background: #F8F9FA; border: 1px solid #EEEEEE; padding: 10px 20px; border-radius: 40px; text-decoration: none; color: #111111; font-weight: 600; font-size: 14px; transition: 0.2s; }
+        .back-btn:hover { background: #EEEEEE; }
+
+        .games-container { flex: 1; display: flex; width: 100%; height: calc(100vh - 81px); }
+        .game-card {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; text-decoration: none; background: #FFFFFF;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1); cursor: pointer; border-right: 1px solid #EEEEEE; position: relative; overflow: hidden;
+        }
+        .game-card:last-child { border-right: none; }
+        .game-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: #F5B942; transform: scaleX(0); transition: transform 0.4s ease; }
+        .game-card:hover { background: #F8F9FA; }
+        .game-card:hover::after { transform: scaleX(1); }
+        .game-card:hover .emoji { transform: scale(1.15) translateY(-5px); }
+        .emoji { font-size: 64px; transition: 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
+        .game-card h2 { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: #111111; }
+
+        @media (max-width: 768px) {
+            .header { padding: 16px 20px; }
+            .games-container { flex-direction: column; height: auto; overflow-y: auto; }
+            .game-card { border-right: none; border-bottom: 1px solid #EEEEEE; flex-direction: row; justify-content: flex-start; padding: 40px; gap: 32px; min-height: 150px; }
+            .game-card:last-child { border-bottom: none; }
+            .emoji { font-size: 40px; }
+            .game-card h2 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="/hub.html" class="logo">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo">
+            <span>Games</span>
+        </a>
+        <a href="/hub.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+    </header>
+
+    <div class="games-container">
+        <a href="/auction/login" class="game-card">
+            <div class="emoji">🔨</div>
+            <h2>Auction</h2>
+        </a>
+        <a href="/chess.html" class="game-card">
+            <div class="emoji">♟️</div>
+            <h2>Chess</h2>
+        </a>
+        <a href="/tictactoe.html" class="game-card">
+            <div class="emoji">❌⭕</div>
+            <h2>Tic Tac Toe</h2>
+        </a>
+    </div>
+</body>
+</html>

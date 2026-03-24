@@ -3,91 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hub — Mejores Amigos</title>
+    <title>Mejores Amigos — Hub</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        :root {
-            --bg: #FFFFFF;
-            --primary: #111111;
-            --accent: #F5B942;
-            --surface: #F9F9FB;
-            --border: #EEEEEE;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: #FFFFFF; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--primary); min-height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .header { padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #EEEEEE; background: #FFFFFF; }
+        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #111111; }
+        .logo img { width: 40px; height: 40px; border-radius: 10px; }
+        .logo span { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
 
-        /* Custom Loading Animation */
-        #loader {
-            position: fixed; inset: 0; background: #fff; z-index: 10000; display: flex; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease;
-        }
-        .loader-logo { width: 100px; animation: bounce 1.2s infinite cubic-bezier(0.4, 0, 0.2, 1); }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-
-        .header { padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; z-index: 10; border-bottom: 1px solid var(--border); }
-        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
-        .logo img { width: 44px; height: 44px; border-radius: 12px; }
-        .logo span { font-family: 'Syne'; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
-
-        .user-pill { display: flex; align-items: center; gap: 12px; background: var(--surface); padding: 8px 16px; border-radius: 100px; border: 1px solid var(--border); }
-        .user-pill span { font-weight: 700; font-size: 14px; }
-        .logout-btn { font-size: 16px; color: #666; cursor: pointer; transition: 0.2s; }
+        .user-area { display: flex; align-items: center; gap: 16px; background: #F8F9FA; padding: 8px 20px; border-radius: 100px; border: 1px solid #EEEEEE; }
+        .user-name { font-weight: 600; font-size: 14px; color: #111111; }
+        .logout-btn { background: none; border: none; font-size: 16px; color: #999; cursor: pointer; transition: 0.2s; padding: 4px; }
         .logout-btn:hover { color: #ff4d4d; }
 
-        .grid-layout { flex: 1; display: flex; width: 100%; height: 100%; }
-
+        .hub-container { flex: 1; display: flex; width: 100%; height: calc(100vh - 81px); }
         .hub-card {
-            flex: 1;
-            background: #fff;
-            border: none;
-            border-right: 1px solid var(--border);
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.6s cubic-bezier(0.2, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 24px;
-            opacity: 0;
-            transform: translateY(20px);
-            text-decoration: none;
-            color: inherit;
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; text-decoration: none; background: #FFFFFF;
+            transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1); cursor: pointer; border-right: 1px solid #EEEEEE; position: relative; overflow: hidden;
         }
         .hub-card:last-child { border-right: none; }
-        .hub-card.show { opacity: 1; transform: translateY(0); }
+        .hub-card::before { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: #F5B942; transform: scaleX(0); transition: transform 0.4s ease; }
+        .hub-card:hover { background: #F8F9FA; }
+        .hub-card:hover::before { transform: scaleX(1); }
+        .hub-card:hover .emoji { transform: scale(1.15) translateY(-5px); }
+        .emoji { font-size: 72px; transition: 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
+        .hub-card h2 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: #111111; }
 
-        .hub-card::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 0; width: 100%; height: 6px;
-            background: var(--accent);
-            transform: scaleX(0);
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        #loader { position: fixed; inset: 0; background: #FFFFFF; z-index: 10000; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+        .loader-logo { width: 100px; animation: pulse 1.2s infinite ease-in-out; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.92); opacity: 0.7; } }
 
-        .hub-card:hover { background: var(--surface); }
-        .hub-card:hover::after { transform: scaleX(1); }
-        .hub-card:hover .emoji { transform: scale(1.2) rotate(8deg); }
-
-        .emoji {
-            font-size: 64px;
-            transition: 0.6s cubic-bezier(0.2, 1, 0.3, 1);
-        }
-
-        .hub-card h2 { font-family: 'Syne'; font-size: 32px; font-weight: 800; letter-spacing: -1px; }
-
-        @media (max-width: 900px) {
-            .grid-layout { flex-direction: column; }
-            .hub-card { border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; padding: 0 40px; justify-content: flex-start; gap: 32px; }
+        @media (max-width: 768px) {
+            .header { padding: 16px 20px; }
+            .hub-container { flex-direction: column; height: calc(100vh - 73px); }
+            .hub-card { border-right: none; border-bottom: 1px solid #EEEEEE; flex-direction: row; justify-content: flex-start; padding-left: 40px; gap: 32px; }
             .hub-card:last-child { border-bottom: none; }
-            .hub-card h2 { font-size: 28px; }
             .emoji { font-size: 48px; }
+            .hub-card h2 { font-size: 24px; }
         }
     </style>
 </head>
@@ -98,18 +55,20 @@
 
     <header class="header">
         <a href="/hub.html" class="logo">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo">
             <span>Mejores Amigos</span>
         </a>
-        <div class="user-pill">
-            <span id="u-name">...</span>
-            <i class="fas fa-power-off logout-btn" onclick="handleLogout()"></i>
+        <div class="user-area">
+            <span class="user-name" id="user-name">Loading...</span>
+            <button class="logout-btn" onclick="handleLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
     </header>
 
-    <main class="grid-layout">
-        <a href="/auction/lobby.html" class="hub-card">
-            <div class="emoji">🏆</div>
+    <div class="hub-container">
+        <a href="/games.html" class="hub-card">
+            <div class="emoji">⚽</div>
             <h2>Games</h2>
         </a>
         <a href="/entertainment.html" class="hub-card">
@@ -120,27 +79,19 @@
             <div class="emoji">📚</div>
             <h2>Padippi Area</h2>
         </a>
-    </main>
+    </div>
 
     <script src="/js/auth.js"></script>
     <script>
         const loader = document.getElementById('loader');
-        const cards = document.querySelectorAll('.hub-card');
-
         async function init() {
             const user = await checkAuth();
             if (!user) { window.location.href = '/index.html'; return; }
-            document.getElementById('u-name').textContent = user.name + (user.isAdmin ? ' 👑' : '');
-
+            document.getElementById('user-name').textContent = user.name + (user.isAdmin ? ' 👑' : '');
             setTimeout(() => {
                 loader.style.opacity = '0';
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    cards.forEach((card, i) => {
-                        setTimeout(() => card.classList.add('show'), i * 150);
-                    });
-                }, 400);
-            }, 800);
+                setTimeout(() => { loader.style.display = 'none'; }, 400);
+            }, 600);
         }
         init();
     </script>
