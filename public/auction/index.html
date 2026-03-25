@@ -19,6 +19,7 @@
             width: 100%; max-width: 400px; background: var(--bg-secondary); border-radius: 40px; border: 1px solid var(--border);
             padding: 40px 24px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
             animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            position: relative; z-index: 10;
         }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -45,6 +46,15 @@
 
         #bidder-name { font-size: 12px; font-weight: 700; color: var(--text-dim); margin-top: 6px; display: block; }
 
+        /* Big Bid Notification Overlay */
+        #bid-msg {
+            position: absolute; top: 15%; left: 0; width: 100%; text-align: center;
+            font-family: 'Syne'; font-size: 24px; font-weight: 800; color: var(--accent);
+            z-index: 5; opacity: 0; pointer-events: none; transition: 0.4s var(--trans);
+            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+        #bid-msg.show { opacity: 1; transform: translateY(-20px); }
+
         .admin-tray { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; border-top: 1px solid var(--border); padding: 12px 20px; display: none; gap: 10px; z-index: 2000; }
         .admin-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; font-size: 12px; cursor: pointer; transition: 0.2s; }
         .btn-p { background: var(--surface); color: #fff; border: 1px solid var(--border); }
@@ -56,14 +66,17 @@
 
         #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #fff; color: #000; padding: 12px 24px; border-radius: 100px; font-size: 13px; font-weight: 800; transition: 0.4s var(--trans); z-index: 3000; }
         #toast.show { transform: translateX(-50%) translateY(0); }
+
+        .version-info { position: absolute; bottom: 60px; right: 20px; font-size: 10px; color: var(--text-dim); font-weight: 800; }
     </style>
 </head>
 <body>
     <div id="pause-banner">PAUSED BY ADMIN</div>
     <div id="toast"></div>
+    <div id="bid-msg">NEW BID PLACED!</div>
 
     <header class="header">
-        <a href="/hub.html" class="flex items-center gap-2" style="text-decoration:none;">
+        <a href="/games" class="flex items-center gap-2" style="text-decoration:none;">
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo-round" style="width:30px; height:30px;">
             <span style="font-weight:800; color:#fff; font-size:16px;">Auction</span>
         </a>
@@ -92,6 +105,7 @@
                 <button class="btn btn-custom" onclick="openCustom()"><i class="fas fa-keyboard"></i></button>
             </div>
         </div>
+        <div class="version-info">STABLE v1.0.0 (BETA)</div>
     </main>
 
     <div class="footer-counts">
@@ -116,12 +130,25 @@
 
         let lastT = 0;
         let tInt = null;
+        let lastBid = 0;
 
         function formatM(l) { return l < 100 ? `₹${l} Lakh` : `₹${(l/100).toFixed(2)} Crore`; }
         function showT(m) { const t = document.getElementById('toast'); t.textContent = m; t.className = 'show'; setTimeout(() => t.className = '', 3000); }
 
+        function showBidNotif(msg) {
+            const el = document.getElementById('bid-msg');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 2000);
+        }
+
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
-        socket.on('notification', (d) => showT(d.message));
+        socket.on('notification', (d) => {
+            showT(d.message);
+            if(d.type === 'info' && d.message.includes('bid')) {
+                // We'll use the state update for more granular bid info
+            }
+        });
 
         socket.on('stateUpdate', (s) => {
             if (s.gameStatus === 'finished') { window.location.href = '/auction/results'; return; }
@@ -139,6 +166,11 @@
                 el.className = 'pos-tag ' + ('pos-' + s.currentPlayer.position.toLowerCase());
                 document.getElementById('p-name').textContent = s.currentPlayer.name.toUpperCase();
             }
+
+            if(s.currentBid !== lastBid && lastBid !== 0) {
+                showBidNotif(`${s.currentBidder.toUpperCase()} BID ${formatM(s.currentBid)}!`);
+            }
+            lastBid = s.currentBid;
 
             document.getElementById('curr-bid').textContent = formatM(s.currentBid);
             document.getElementById('bidder-name').textContent = s.currentBidder ? `By ${s.currentBidder}` : 'Opening price';
