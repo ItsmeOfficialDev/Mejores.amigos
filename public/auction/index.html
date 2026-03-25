@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Auction — Mejores Amigos</title>
+    <title>Live Arena — Mejores Amigos</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(10,10,15,0.8); backdrop-filter: blur(10px); z-index: 100; }
-        .budget-pill { background: var(--surface); padding: 8px 16px; border-radius: 100px; font-weight: 800; font-size: 13px; border: 1px solid var(--border); color: var(--accent); }
+        body { background: #0a0a0f; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .header { background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .budget-pill { background: rgba(255,255,255,0.05); padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 800; border: 1px solid var(--border); color: var(--accent); }
 
         .main-stage { flex: 1; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
 
@@ -22,16 +22,21 @@
         }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        .pos-tag { background: rgba(255,255,255,0.05); padding: 6px 16px; border-radius: 100px; font-size: 11px; font-weight: 800; letter-spacing: 1px; color: var(--accent); border: 1px solid var(--border); margin-bottom: 20px; display: inline-block; }
+        .pos-tag { padding: 6px 16px; border-radius: 100px; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 20px; display: inline-block; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.1); }
+        .pos-gk { background: #FACC15; color: #000; }
+        .pos-def { background: #3B82F6; color: #fff; }
+        .pos-mid { background: #22C55E; color: #fff; }
+        .pos-fwd { background: #EF4444; color: #fff; }
 
-        #p-name { font-family: 'Syne'; font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 32px; line-height: 1; color: #fff; }
+        #p-name { font-family: 'Syne'; font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 32px; line-height: 1; color: #fff; text-transform: uppercase; }
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-bottom: 24px; }
         .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; text-align: center; }
         .stat-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; letter-spacing: 0.5px; }
         .stat-val { font-size: 20px; font-weight: 800; }
 
-        #timer.urgent { color: var(--error); transform: scale(1.1); transition: 0.2s; }
+        #timer.urgent { color: var(--error); transform: scale(1.1); transition: 0.2s; animation: pulseRed 0.5s infinite alternate; }
+        @keyframes pulseRed { from { opacity: 1; } to { opacity: 0.6; } }
 
         .bid-controls { width: 100%; max-width: 400px; display: grid; grid-template-columns: 1fr 80px; gap: 12px; }
         .btn-bid { background: #fff; color: #000; box-shadow: 0 10px 30px rgba(255,255,255,0.1); flex: 1; }
@@ -112,7 +117,7 @@
         let lastT = 0;
         let tInt = null;
 
-        function formatM(l) { return l < 100 ? \`₹\${l} Lakh\` : \`₹\${(l/100).toFixed(2)} Crore\`; }
+        function formatM(l) { return l < 100 ? `₹${l} Lakh` : `₹${(l/100).toFixed(2)} Crore`; }
         function showT(m) { const t = document.getElementById('toast'); t.textContent = m; t.className = 'show'; setTimeout(() => t.className = '', 3000); }
 
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
@@ -129,16 +134,18 @@
             }
 
             if (s.currentPlayer) {
+                const el = document.getElementById('p-pos');
+                el.textContent = s.currentPlayer.position;
+                el.className = 'pos-tag ' + ('pos-' + s.currentPlayer.position.toLowerCase());
                 document.getElementById('p-name').textContent = s.currentPlayer.name.toUpperCase();
-                document.getElementById('p-pos').textContent = s.currentPlayer.position;
             }
 
             document.getElementById('curr-bid').textContent = formatM(s.currentBid);
-            document.getElementById('bidder-name').textContent = s.currentBidder ? \`By \${s.currentBidder}\` : 'Opening price';
+            document.getElementById('bidder-name').textContent = s.currentBidder ? `By ${s.currentBidder}` : 'Opening price';
 
             const bb = document.getElementById('bid-btn');
             const next = s.currentBid + 5;
-            bb.textContent = \`BID \${formatM(next)}\`;
+            bb.textContent = `BID ${formatM(next)}`;
             bb.disabled = (s.currentBidder === user.name || s.isPaused);
             bb.onclick = () => socket.emit('bid', next);
 

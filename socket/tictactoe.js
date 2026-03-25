@@ -4,8 +4,6 @@ module.exports = (io, trackActivity) => {
 
     ns.on('connection', (socket) => {
         socket.on('joinGame', ({ gameId, player }) => {
-            socket.join(gameId);
-            socket.playerName = player;
             let g = games.get(gameId);
 
             if (!g) {
@@ -29,7 +27,14 @@ module.exports = (io, trackActivity) => {
                     g.O = player;
                     trackActivity(player, 'ttt_joined', { gameId, as: 'O' });
                 }
+                else if (g.X !== player && g.O !== player) {
+                    socket.emit('error', 'Game room is full. Please try another link.');
+                    return;
+                }
             }
+
+            socket.join(gameId);
+            socket.playerName = player;
 
             ns.to(gameId).emit('gameState', {
                 board: g.board,

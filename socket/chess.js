@@ -6,8 +6,6 @@ module.exports = (io, trackActivity) => {
 
     ns.on('connection', (socket) => {
         socket.on('joinGame', ({ gameId, player }) => {
-            socket.join(gameId);
-            socket.playerName = player;
             let g = activeGames.get(gameId);
 
             if (!g) {
@@ -21,11 +19,19 @@ module.exports = (io, trackActivity) => {
                 };
                 activeGames.set(gameId, g);
                 trackActivity(player, 'chess_created', { gameId });
-            } else if (!g.black && g.white !== player) {
-                g.black = player;
-                g.lastMove = Date.now();
-                trackActivity(player, 'chess_joined', { gameId, opponent: g.white });
+            } else {
+                if (!g.black && g.white !== player) {
+                    g.black = player;
+                    g.lastMove = Date.now();
+                    trackActivity(player, 'chess_joined', { gameId, opponent: g.white });
+                } else if (g.white !== player && g.black !== player) {
+                    socket.emit('error', 'Game room is full. Please try another link.');
+                    return;
+                }
             }
+
+            socket.join(gameId);
+            socket.playerName = player;
 
             ns.to(gameId).emit('gameState', {
                 fen: g.chess.fen(),
