@@ -96,5 +96,9 @@ module.exports = (io, trackActivity) => {
                 ns.to(gameId).emit('gameState', g);
             }
         });
+
+        socket.on('disconnect', () => {
+            // Clean up or notify if needed, but for ttt we just wait for rejoin
+        });
     });
 };

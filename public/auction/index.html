@@ -9,7 +9,10 @@
     <style>
         body { background: #0a0a0f; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         .header { background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
-        .budget-pill { background: rgba(255,255,255,0.05); padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 800; border: 1px solid var(--border); color: var(--accent); }
+        .top-btns { display: flex; gap: 8px; }
+        .pill { background: rgba(255,255,255,0.05); padding: 6px 14px; border-radius: 100px; font-size: 11px; font-weight: 800; border: 1px solid var(--border); color: #fff; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
+        .pill:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
+        .pill.accent { color: var(--accent); border-color: var(--accent); }
 
         .main-stage { flex: 1; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
 
@@ -19,6 +22,7 @@
             width: 100%; max-width: 400px; background: var(--bg-secondary); border-radius: 40px; border: 1px solid var(--border);
             padding: 40px 24px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
             animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            position: relative; z-index: 10;
         }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -38,12 +42,25 @@
         #timer.urgent { color: var(--error); transform: scale(1.1); transition: 0.2s; animation: pulseRed 0.5s infinite alternate; }
         @keyframes pulseRed { from { opacity: 1; } to { opacity: 0.6; } }
 
-        .bid-controls { width: 100%; max-width: 400px; display: grid; grid-template-columns: 1fr 80px; gap: 12px; }
-        .btn-bid { background: #fff; color: #000; box-shadow: 0 10px 30px rgba(255,255,255,0.1); flex: 1; }
-        .btn-bid:disabled { opacity: 0.4; cursor: not-allowed; }
+        .bid-controls { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; }
+        .bid-row { display: grid; grid-template-columns: 1fr 80px; gap: 12px; }
+        .btn-bid { background: #fff; color: #000; box-shadow: 0 10px 30px rgba(255,255,255,0.1); flex: 1; font-weight: 900; }
+        .btn-bid:disabled { opacity: 0.4; cursor: not-allowed; background: #333; color: #888; }
         .btn-custom { background: var(--surface); border: 1px solid var(--border); color: #fff; width: 80px; }
 
         #bidder-name { font-size: 12px; font-weight: 700; color: var(--text-dim); margin-top: 6px; display: block; }
+        #bid-error { font-size: 11px; color: var(--error); font-weight: 700; margin-top: 8px; min-height: 14px; }
+
+        #watch-mode { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; font-size: 9px; font-weight: 900; padding: 4px 12px; border-radius: 100px; white-space: nowrap; display: none; }
+
+        /* Big Bid Notification Overlay */
+        #bid-msg {
+            position: absolute; top: 12%; left: 0; width: 100%; text-align: center;
+            font-family: 'Syne'; font-size: 24px; font-weight: 800; color: var(--accent);
+            z-index: 5; opacity: 0; pointer-events: none; transition: 0.4s var(--trans);
+            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+        #bid-msg.show { opacity: 1; transform: translateY(-20px); }
 
         .admin-tray { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; border-top: 1px solid var(--border); padding: 12px 20px; display: none; gap: 10px; z-index: 2000; }
         .admin-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; font-size: 12px; cursor: pointer; transition: 0.2s; }
@@ -53,25 +70,50 @@
 
         .footer-counts { background: var(--bg-secondary); padding: 12px; border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 15px; font-size: 10px; font-weight: 800; color: var(--text-dim); flex-wrap: wrap; }
         .count-item span { color: #fff; }
+        .count-item span.full { color: var(--error); }
 
         #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #fff; color: #000; padding: 12px 24px; border-radius: 100px; font-size: 13px; font-weight: 800; transition: 0.4s var(--trans); z-index: 3000; }
         #toast.show { transform: translateX(-50%) translateY(0); }
+
+        .version-info { position: absolute; bottom: 60px; right: 20px; font-size: 10px; color: var(--text-dim); font-weight: 800; }
+
+        /* Modal Refinement */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 4000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-card { width: 100%; max-width: 440px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 32px; padding: 24px; display: flex; flex-direction: column; max-height: 80vh; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-tabs { display: flex; gap: 12px; }
+        .tab { color: var(--text-dim); font-size: 13px; font-weight: 800; cursor: pointer; border-bottom: 2px solid transparent; padding-bottom: 4px; }
+        .tab.active { color: var(--accent); border-color: var(--accent); }
+        .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; }
+        .roster-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
+        .roster-item { background: var(--surface); border: 1px solid var(--border); padding: 12px 16px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .roster-item .name { font-weight: 700; font-size: 14px; color: #fff; }
+        .roster-item .pos { font-size: 9px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-left: 6px; }
+        .roster-item .price { font-weight: 800; color: var(--accent); font-size: 13px; }
+
+        .global-item { border-left: 3px solid var(--accent); }
+        .global-item .owner { font-size: 9px; color: var(--accent); font-weight: 900; margin-bottom: 2px; text-transform: uppercase; }
     </style>
 </head>
 <body>
     <div id="pause-banner">PAUSED BY ADMIN</div>
     <div id="toast"></div>
+    <div id="bid-msg">NEW BID PLACED!</div>
 
     <header class="header">
-        <a href="/hub.html" class="flex items-center gap-2" style="text-decoration:none;">
+        <a href="/games" class="flex items-center gap-2" style="text-decoration:none;">
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo-round" style="width:30px; height:30px;">
-            <span style="font-weight:800; color:#fff; font-size:16px;">Auction</span>
+            <span style="font-weight:800; color:#fff; font-size:16px;">Arena</span>
         </a>
-        <div class="budget-pill" id="u-budget">₹15.00 Crore</div>
+        <div class="top-btns">
+            <div class="pill accent" id="u-budget" onclick="openModal('my')">💰 ₹15Cr</div>
+            <div class="pill" onclick="openModal('all')"><i class="fas fa-users"></i> Teams</div>
+        </div>
     </header>
 
     <main class="main-stage">
         <div class="player-card">
+            <div id="watch-mode">WATCHING MODE — POSITION FULL</div>
             <div class="pos-tag" id="p-pos">GOALKEEPER</div>
             <h1 id="p-name">SYNCING...</h1>
 
@@ -88,10 +130,14 @@
             </div>
 
             <div class="bid-controls">
-                <button class="btn btn-bid" id="bid-btn" disabled>PLACE BID</button>
-                <button class="btn btn-custom" onclick="openCustom()"><i class="fas fa-keyboard"></i></button>
+                <div class="bid-row">
+                    <button class="btn btn-bid" id="bid-btn" disabled>PLACE BID</button>
+                    <button class="btn btn-custom" onclick="openCustom()"><i class="fas fa-keyboard"></i></button>
+                </div>
+                <div id="bid-error"></div>
             </div>
         </div>
+        <div class="version-info">STABLE v1.0.0 (BETA)</div>
     </main>
 
     <div class="footer-counts">
@@ -108,6 +154,20 @@
         <button class="admin-btn btn-e" onclick="confirmEnd()">EMERGENCY</button>
     </div>
 
+    <!-- Squad/Global Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-tabs">
+                    <div class="tab" id="tab-my" onclick="showTab('my')">MY SQUAD</div>
+                    <div class="tab" id="tab-all" onclick="showTab('all')">ALL TEAMS</div>
+                </div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="roster-list" id="list"></div>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io('/auction');
@@ -116,14 +176,33 @@
 
         let lastT = 0;
         let tInt = null;
+        let lastBid = 0;
+        let currentPos = '';
+        let gameState = null;
+        let activeTab = 'my';
 
         function formatM(l) { return l < 100 ? `₹${l} Lakh` : `₹${(l/100).toFixed(2)} Crore`; }
         function showT(m) { const t = document.getElementById('toast'); t.textContent = m; t.className = 'show'; setTimeout(() => t.className = '', 3000); }
 
+        function showBidNotif(msg) {
+            const el = document.getElementById('bid-msg');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 2000);
+        }
+
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
-        socket.on('notification', (d) => showT(d.message));
+        socket.on('notification', (d) => {
+            showT(d.message);
+            if(d.type === 'error') {
+                const err = document.getElementById('bid-error');
+                err.textContent = d.message;
+                setTimeout(() => { if(err.textContent === d.message) err.textContent = ''; }, 4000);
+            }
+        });
 
         socket.on('stateUpdate', (s) => {
+            gameState = s;
             if (s.gameStatus === 'finished') { window.location.href = '/auction/results'; return; }
             document.getElementById('pause-banner').style.display = s.isPaused ? 'block' : 'none';
             if (user.isAuctionAdmin) {
@@ -138,7 +217,13 @@
                 el.textContent = s.currentPlayer.position;
                 el.className = 'pos-tag ' + ('pos-' + s.currentPlayer.position.toLowerCase());
                 document.getElementById('p-name').textContent = s.currentPlayer.name.toUpperCase();
+                currentPos = s.currentPlayer.position;
             }
+
+            if(s.currentBid !== lastBid && lastBid !== 0) {
+                showBidNotif(`${s.currentBidder.toUpperCase()} BID ${formatM(s.currentBid)}!`);
+            }
+            lastBid = s.currentBid;
 
             document.getElementById('curr-bid').textContent = formatM(s.currentBid);
             document.getElementById('bidder-name').textContent = s.currentBidder ? `By ${s.currentBidder}` : 'Opening price';
@@ -146,18 +231,40 @@
             const bb = document.getElementById('bid-btn');
             const next = s.currentBid + 5;
             bb.textContent = `BID ${formatM(next)}`;
-            bb.disabled = (s.currentBidder === user.name || s.isPaused);
-            bb.onclick = () => socket.emit('bid', next);
 
             const me = s.players.find(x => x.name === user.name);
             if (me) {
-                document.getElementById('u-budget').textContent = formatM(me.budget);
-                document.getElementById('c-gk').textContent = me.positions.GK + '/3';
-                document.getElementById('c-def').textContent = me.positions.DEF + '/5';
-                document.getElementById('c-mid').textContent = me.positions.MID + '/5';
-                document.getElementById('c-fwd').textContent = me.positions.FWD + '/5';
+                document.getElementById('u-budget').textContent = '💰 ' + formatM(me.budget);
+                const counts = { GK: 3, DEF: 5, MID: 5, FWD: 5 };
+                ['gk','def','mid','fwd'].forEach(p => {
+                    const val = me.positions[p.toUpperCase()];
+                    const el = document.getElementById('c-' + p);
+                    el.textContent = val + '/' + counts[p.toUpperCase()];
+                    el.className = val >= counts[p.toUpperCase()] ? 'full' : '';
+                });
                 document.getElementById('c-total').textContent = me.teamSize + '/18';
+
+                // Real-time button validation
+                let error = '';
+                const emptySlots = 18 - me.teamSize;
+                const reserve = (emptySlots - 1) * 10;
+                const isPosFull = me.positions[currentPos] >= counts[currentPos];
+
+                if (s.isPaused) error = 'Auction Paused';
+                else if (s.currentBidder === user.name) error = 'You are highest bidder';
+                else if (me.teamSize >= 18) error = 'Squad is full (18/18)';
+                else if (isPosFull) error = currentPos + ' position is full';
+                else if (me.budget < next) error = 'Insufficient budget';
+                else if (me.budget - next < reserve) error = `Reserve ₹${reserve}L required`;
+
+                bb.disabled = error !== '';
+                document.getElementById('bid-error').textContent = error;
+                document.getElementById('watch-mode').style.display = isPosFull ? 'block' : 'none';
+
+                if(document.getElementById('modal').style.display === 'flex') updateModal();
             }
+
+            bb.onclick = () => socket.emit('bid', next);
 
             if (s.timerEnd !== lastT) { lastT = s.timerEnd; runT(s.timerEnd, s.isPaused); }
 
@@ -191,6 +298,49 @@
         }
 
         function confirmEnd() { if (prompt('Type "END" to confirm termination:') === 'END') socket.emit('emergencyEnd', 'END'); }
+
+        function openModal(t) { activeTab = t; document.getElementById('modal').style.display = 'flex'; updateModal(); }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+        function showTab(t) { activeTab = t; updateModal(); }
+
+        function updateModal() {
+            const list = document.getElementById('list');
+            document.getElementById('tab-my').className = activeTab === 'my' ? 'tab active' : 'tab';
+            document.getElementById('tab-all').className = activeTab === 'all' ? 'tab active' : 'tab';
+
+            if (activeTab === 'my') {
+                const me = gameState.players.find(x => x.name === user.name);
+                if (!me || me.team.length === 0) list.innerHTML = '<div style="color:var(--text-dim); text-align:center; padding:40px; font-size:13px;">No players bought yet.</div>';
+                else {
+                    list.innerHTML = me.team.map(p => `
+                        <div class="roster-item">
+                            <div><span class="name">${p.name}</span><span class="pos">${p.position}</span></div>
+                            <span class="price">${formatM(p.price)}</span>
+                        </div>
+                    `).reverse().join('');
+                }
+            } else {
+                let html = '';
+                const allSales = [];
+                gameState.players.forEach(p => {
+                    p.team.forEach(tp => allSales.push({...tp, owner: p.name}));
+                });
+                allSales.sort((a,b) => b.price - a.price); // Show highest sales first
+
+                if (allSales.length === 0) list.innerHTML = '<div style="color:var(--text-dim); text-align:center; padding:40px; font-size:13px;">No sales recorded.</div>';
+                else {
+                    list.innerHTML = allSales.map(s => `
+                        <div class="roster-item global-item">
+                            <div>
+                                <div class="owner">${s.owner}</div>
+                                <span class="name">${s.name}</span><span class="pos">${s.pos || s.position}</span>
+                            </div>
+                            <span class="price">${formatM(s.price)}</span>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
     </script>
 </body>
 </html>

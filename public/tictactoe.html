@@ -28,17 +28,22 @@
 
         .invite-section { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 24px; width: 100%; text-align: center; }
         .copy-trigger { color: var(--accent); font-weight: 800; cursor: pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; }
+
+        .version-tag { font-size: 10px; color: var(--text-dim); margin-top: 20px; font-weight: 800; }
     </style>
 </head>
 <body>
     <header class="header">
         <a href="/games" style="text-decoration:none; color:var(--text-dim); font-size:14px; font-weight:700;"><i class="fas fa-arrow-left"></i> Games</a>
-        <h2 style="font-size:16px; color:#fff;">Tic Tac Toe</h2>
+        <div class="flex items-center gap-2">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo-round" style="width:28px; height:28px;">
+            <h2 style="font-size:16px; color:#fff;">Tic Tac Toe</h2>
+        </div>
         <div style="width:50px;"></div>
     </header>
 
     <main class="game-area">
-        <div class="status" id="status">Waiting...</div>
+        <div class="status" id="status">Connecting...</div>
 
         <div id="invite-box" class="invite-section animate-up">
             <p style="font-size: 14px; color: var(--text-dim); line-height: 1.5;">Waiting for a challenger.<br>Share the link to play!</p>
@@ -71,6 +76,7 @@
         </div>
 
         <button class="btn btn-primary w-full" id="reset-game" style="display: none;" onclick="socket.emit('resetGame', {gameId})">Play Again</button>
+        <div class="version-tag">STABLE v1.0.0 (BETA)</div>
     </main>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -97,32 +103,42 @@
                 document.getElementById('board').style.display = 'grid';
                 document.getElementById('game-stats').style.display = 'grid';
                 document.getElementById('invite-box').style.display = 'none';
+            } else {
+                isReady = false;
+                document.getElementById('status').textContent = "Waiting for Challenger...";
+                document.getElementById('board').style.display = 'none';
+                document.getElementById('game-stats').style.display = 'none';
+                document.getElementById('invite-box').style.display = 'block';
             }
 
-            turn = g.turn;
-            document.getElementById('name-x').textContent = g.X || 'Waiting...';
-            document.getElementById('name-o').textContent = g.O || 'Waiting...';
-            document.getElementById('score-x').textContent = g.scores.X;
-            document.getElementById('score-o').textContent = g.scores.O;
+            if(isReady) {
+                turn = g.turn;
+                document.getElementById('name-x').textContent = g.X || 'Waiting...';
+                document.getElementById('name-o').textContent = g.O || 'Waiting...';
+                document.getElementById('score-x').textContent = g.scores.X;
+                document.getElementById('score-o').textContent = g.scores.O;
 
-            document.getElementById('badge-X').classList.toggle('active', turn === 'X');
-            document.getElementById('badge-O').classList.toggle('active', turn === 'O');
+                document.getElementById('badge-X').classList.toggle('active', turn === 'X');
+                document.getElementById('badge-O').classList.toggle('active', turn === 'O');
 
-            const cells = document.querySelectorAll('.cell');
-            g.board.forEach((v, i) => {
-                cells[i].textContent = v;
-                cells[i].className = 'cell ' + v;
-            });
+                const cells = document.querySelectorAll('.cell');
+                g.board.forEach((v, i) => {
+                    cells[i].textContent = v;
+                    cells[i].className = 'cell ' + v;
+                });
 
-            document.getElementById('reset-game').style.display = g.active ? 'none' : 'inline-flex';
+                document.getElementById('reset-game').style.display = g.active ? 'none' : 'inline-flex';
 
-            if (!g.active) document.getElementById('status').textContent = "Game Over";
-            else document.getElementById('status').textContent = turn === mySymbol ? "Your Turn ("+mySymbol+")" : "Opponent's Turn";
+                if (!g.active) document.getElementById('status').textContent = "Game Over";
+                else document.getElementById('status').textContent = turn === mySymbol ? "Your Turn ("+mySymbol+")" : "Opponent's Turn";
+            }
         });
 
         socket.on('gameOver', (d) => {
             alert(d.winner === 'Draw' ? "It's a Draw!" : (d.winner === mySymbol ? "You Won! 🎉" : "You Lost... 💀"));
         });
+
+        socket.on('error', (m) => { alert(m); location.href='/games'; });
 
         function makeMove(i) {
             if(!isReady) return;
@@ -132,7 +148,7 @@
         document.getElementById('copy-btn').onclick = () => {
             navigator.clipboard.writeText(window.location.href);
             const span = document.querySelector('#copy-btn span');
-            span.textContent = 'Copied!';
+            span.textContent = 'Copied Link!';
             setTimeout(() => { span.textContent = 'Copy Invite Link'; }, 2000);
         };
     </script>

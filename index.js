@@ -171,7 +171,6 @@ app.get('/auction/lobby', (req, res) => res.sendFile(path.join(__dirname, 'publi
 app.get('/auction/game', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/index.html')));
 app.get('/auction/results', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/results.html')));
 
-require('./socket/chess')(io, trackActivity);
 require('./socket/tictactoe')(io, trackActivity);
 require('./socket/auction')(io, trackActivity);
 
