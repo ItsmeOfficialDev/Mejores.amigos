@@ -21,10 +21,8 @@ module.exports = (io, trackActivity) => {
     let isPaused = false;
     let timeLeftOnPause = 0;
 
-    let adminDisconnectTimeout = null;
     let adminInactivityTimeout = null;
     const INACTIVITY_LIMIT = 5 * 60 * 1000;
-    const DISCONNECT_GRACE = 60 * 1000;
 
     function shuffle(a) {
         const array = [...a];
@@ -50,7 +48,7 @@ module.exports = (io, trackActivity) => {
                 budget: p.budget,
                 teamSize: p.team.length,
                 positions: p.positions,
-                team: gameStatus === "finished" ? p.team : []
+                team: p.team
             }))
         };
         ns.emit(type, state);
@@ -193,22 +191,41 @@ module.exports = (io, trackActivity) => {
         socket.on('bid', (amount) => {
             const p = players.find(x => x.socketId === socket.id);
             if (!p || gameStatus !== 'active' || isPaused) return;
-            if (amount <= currentBid || amount % BID_INCREMENT !== 0) return;
-            if (p.name === currentBidder) return;
 
             const player = auctionQueue[currentIdx];
             if (!player) return;
+
+            if (p.name === currentBidder) {
+                socket.emit('notification', { message: 'You are already the highest bidder!', type: 'error' });
+                return;
+            }
+
             if (p.positions[player.position] >= MAX_POS[player.position]) {
-                socket.emit('notification', { message: 'Position full!', type: 'error' });
+                socket.emit('notification', { message: `${player.position} position full! (${p.positions[player.position]}/${MAX_POS[player.position]})`, type: 'error' });
+                return;
+            }
+
+            if (p.team.length >= 18) {
+                socket.emit('notification', { message: 'Squad full! (18/18 players)', type: 'error' });
                 return;
             }
 
             const emptySlots = 18 - p.team.length;
-            if (p.budget - amount < (emptySlots - 1) * 10) {
-                 socket.emit('notification', { message: 'Reserve 10L/slot required!', type: 'error' });
+            const reserveNeeded = (emptySlots - 1) * 10;
+            if (p.budget - amount < reserveNeeded) {
+                 socket.emit('notification', { message: `Need ₹${reserveNeeded}L reserve for ${emptySlots-1} remaining slots!`, type: 'error' });
                  return;
             }
-            if (p.budget < amount) return;
+
+            if (p.budget < amount) {
+                socket.emit('notification', { message: `Insufficient budget! Need ${amount}L`, type: 'error' });
+                return;
+            }
+
+            if (amount <= currentBid || amount % BID_INCREMENT !== 0) {
+                socket.emit('notification', { message: 'Bid must be higher and multiple of 5!', type: 'error' });
+                return;
+            }
 
             currentBid = amount;
             currentBidder = p.name;
@@ -279,6 +296,15 @@ module.exports = (io, trackActivity) => {
                 broadcast();
             }
         });
+
+        socket.on('disconnect', () => {
+            const p = players.find(x => x.socketId === socket.id);
+            if (p) {
+                p.socketId = null;
+                trackActivity(p.name, 'auction_disconnected');
+                broadcast();
+            }
+        });
     });
 
     setInterval(() => {
@@ -289,7 +315,7 @@ module.exports = (io, trackActivity) => {
                 winner.budget -= currentBid;
                 winner.team.push({ ...player, price: currentBid });
                 winner.positions[player.position]++;
-                ns.emit('notification', { message: '✅ ' + player.name + ' SOLD!', type: 'success' });
+                ns.emit('notification', { message: '✅ ' + player.name + ' SOLD to ' + winner.name + '!', type: 'success' });
                 trackActivity(winner.name, 'auction_won_player', { player: player.name, price: currentBid });
             }
 
