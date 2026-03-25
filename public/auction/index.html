@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Arena — Mejores Amigos</title>
+    <title>Arena — Mejores Amigos</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -11,160 +11,114 @@
         .header { background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         .top-btns { display: flex; gap: 8px; }
         .pill { background: rgba(255,255,255,0.05); padding: 6px 14px; border-radius: 100px; font-size: 11px; font-weight: 800; border: 1px solid var(--border); color: #fff; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
-        .pill:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
+        .pill.leave { border-color: var(--error); color: var(--error); }
         .pill.accent { color: var(--accent); border-color: var(--accent); }
 
+        .player-bar { background: rgba(0,0,0,0.3); padding: 10px 20px; display: flex; gap: 10px; overflow-x: auto; border-bottom: 1px solid var(--border); scrollbar-width: none; }
+        .player-bar::-webkit-scrollbar { display: none; }
+        .p-chip { display: flex; align-items: center; gap: 6px; background: var(--surface); padding: 4px 10px; border-radius: 100px; border: 1px solid var(--border); white-space: nowrap; }
+        .p-dot { width: 8px; height: 8px; border-radius: 50%; background: #444; }
+        .p-dot.online { background: var(--success); box-shadow: 0 0 10px var(--success); }
+        .p-init { font-weight: 900; font-size: 10px; color: var(--accent); }
+
         .main-stage { flex: 1; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-
-        #pause-banner { position: fixed; top: 0; left: 0; width: 100%; background: var(--accent); color: #000; padding: 10px; text-align: center; font-weight: 800; font-family: 'Syne'; z-index: 1000; display: none; }
-
-        .player-card {
-            width: 100%; max-width: 400px; background: var(--bg-secondary); border-radius: 40px; border: 1px solid var(--border);
-            padding: 40px 24px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-            animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-            position: relative; z-index: 10;
-        }
+        .player-card { width: 100%; max-width: 400px; background: var(--bg-secondary); border-radius: 40px; border: 1px solid var(--border); padding: 40px 24px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4); animation: slideUp 0.6s forwards; position: relative; z-index: 10; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        .pos-tag { padding: 6px 16px; border-radius: 100px; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 20px; display: inline-block; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.1); }
-        .pos-gk { background: #FACC15; color: #000; }
-        .pos-def { background: #3B82F6; color: #fff; }
-        .pos-mid { background: #22C55E; color: #fff; }
-        .pos-fwd { background: #EF4444; color: #fff; }
+        .pos-tag { padding: 6px 16px; border-radius: 100px; font-size: 11px; font-weight: 800; margin-bottom: 20px; display: inline-block; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.1); }
+        .pos-gk { background: #FACC15; color: #000; } .pos-def { background: #3B82F6; } .pos-mid { background: #22C55E; } .pos-fwd { background: #EF4444; }
+        #p-name { font-family: 'Syne'; font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 32px; line-height: 1; }
 
-        #p-name { font-family: 'Syne'; font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 32px; line-height: 1; color: #fff; text-transform: uppercase; }
-
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-bottom: 24px; }
         .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; text-align: center; }
-        .stat-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; letter-spacing: 0.5px; }
         .stat-val { font-size: 20px; font-weight: 800; }
-
-        #timer.urgent { color: var(--error); transform: scale(1.1); transition: 0.2s; animation: pulseRed 0.5s infinite alternate; }
+        #timer.urgent { color: var(--error); animation: pulseRed 0.5s infinite alternate; }
         @keyframes pulseRed { from { opacity: 1; } to { opacity: 0.6; } }
 
-        .bid-controls { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; }
+        .bid-controls { width: 100%; max-width: 400px; }
         .bid-row { display: grid; grid-template-columns: 1fr 80px; gap: 12px; }
-        .btn-bid { background: #fff; color: #000; box-shadow: 0 10px 30px rgba(255,255,255,0.1); flex: 1; font-weight: 900; }
-        .btn-bid:disabled { opacity: 0.4; cursor: not-allowed; background: #333; color: #888; }
-        .btn-custom { background: var(--surface); border: 1px solid var(--border); color: #fff; width: 80px; }
+        .btn-bid { background: #fff; color: #000; flex: 1; font-weight: 900; }
+        .btn-bid:disabled { background: #333; color: #888; }
 
-        #bidder-name { font-size: 12px; font-weight: 700; color: var(--text-dim); margin-top: 6px; display: block; }
-        #bid-error { font-size: 11px; color: var(--error); font-weight: 700; margin-top: 8px; min-height: 14px; }
-
-        #watch-mode { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; font-size: 9px; font-weight: 900; padding: 4px 12px; border-radius: 100px; white-space: nowrap; display: none; }
-
-        /* Big Bid Notification Overlay */
-        #bid-msg {
-            position: absolute; top: 12%; left: 0; width: 100%; text-align: center;
-            font-family: 'Syne'; font-size: 24px; font-weight: 800; color: var(--accent);
-            z-index: 5; opacity: 0; pointer-events: none; transition: 0.4s var(--trans);
-            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
-        }
+        #bid-msg { position: absolute; top: 12%; left: 0; width: 100%; text-align: center; font-family: 'Syne'; font-size: 24px; font-weight: 800; color: var(--accent); opacity: 0; transition: 0.4s; z-index: 50; }
         #bid-msg.show { opacity: 1; transform: translateY(-20px); }
 
         .admin-tray { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; border-top: 1px solid var(--border); padding: 12px 20px; display: none; gap: 10px; z-index: 2000; }
-        .admin-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; font-size: 12px; cursor: pointer; transition: 0.2s; }
-        .btn-p { background: var(--surface); color: #fff; border: 1px solid var(--border); }
-        .btn-d { background: var(--error); color: #fff; display: none; }
-        .btn-e { background: #fff; color: #000; }
+        .footer-counts { background: var(--bg-secondary); padding: 12px; border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 15px; font-size: 10px; font-weight: 800; color: var(--text-dim); }
 
-        .footer-counts { background: var(--bg-secondary); padding: 12px; border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 15px; font-size: 10px; font-weight: 800; color: var(--text-dim); flex-wrap: wrap; }
-        .count-item span { color: #fff; }
-        .count-item span.full { color: var(--error); }
-
-        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #fff; color: #000; padding: 12px 24px; border-radius: 100px; font-size: 13px; font-weight: 800; transition: 0.4s var(--trans); z-index: 3000; }
-        #toast.show { transform: translateX(-50%) translateY(0); }
-
-        .version-info { position: absolute; bottom: 60px; right: 20px; font-size: 10px; color: var(--text-dim); font-weight: 800; }
-
-        /* Modal Refinement */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 4000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-card { width: 100%; max-width: 440px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 32px; padding: 24px; display: flex; flex-direction: column; max-height: 80vh; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-tabs { display: flex; gap: 12px; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 4000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-card { width: 100%; max-width: 400px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 32px; padding: 24px; display: flex; flex-direction: column; max-height: 80vh; }
+        .modal-tabs { display: flex; gap: 12px; margin-bottom: 20px; }
         .tab { color: var(--text-dim); font-size: 13px; font-weight: 800; cursor: pointer; border-bottom: 2px solid transparent; padding-bottom: 4px; }
         .tab.active { color: var(--accent); border-color: var(--accent); }
-        .close-btn { background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; }
-        .roster-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
-        .roster-item { background: var(--surface); border: 1px solid var(--border); padding: 12px 16px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; }
-        .roster-item .name { font-weight: 700; font-size: 14px; color: #fff; }
-        .roster-item .pos { font-size: 9px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; margin-left: 6px; }
-        .roster-item .price { font-weight: 800; color: var(--accent); font-size: 13px; }
-
-        .global-item { border-left: 3px solid var(--accent); }
-        .global-item .owner { font-size: 9px; color: var(--accent); font-weight: 900; margin-bottom: 2px; text-transform: uppercase; }
+        .roster-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .roster-item { background: var(--surface); padding: 12px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .roster-item .owner { font-size: 9px; color: var(--accent); font-weight: 900; display: block; margin-bottom: 2px; }
     </style>
 </head>
 <body>
-    <div id="pause-banner">PAUSED BY ADMIN</div>
     <div id="toast"></div>
-    <div id="bid-msg">NEW BID PLACED!</div>
+    <div id="bid-msg">NEW BID!</div>
 
     <header class="header">
-        <a href="/games" class="flex items-center gap-2" style="text-decoration:none;">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo-round" style="width:30px; height:30px;">
-            <span style="font-weight:800; color:#fff; font-size:16px;">Arena</span>
-        </a>
         <div class="top-btns">
-            <div class="pill accent" id="u-budget" onclick="openModal('my')">💰 ₹15Cr</div>
-            <div class="pill" onclick="openModal('all')"><i class="fas fa-users"></i> Teams</div>
+            <div class="pill leave" onclick="leaveArena()">LEAVE</div>
+            <div class="pill" id="squad-btn" onclick="openModal('my')">SQUAD</div>
         </div>
+        <div class="pill accent" onclick="openModal('all')" id="u-budget">₹15.00 Cr</div>
     </header>
+
+    <div class="player-bar" id="p-bar"></div>
 
     <main class="main-stage">
         <div class="player-card">
-            <div id="watch-mode">WATCHING MODE — POSITION FULL</div>
-            <div class="pos-tag" id="p-pos">GOALKEEPER</div>
-            <h1 id="p-name">SYNCING...</h1>
-
-            <div class="stats-grid">
+            <div id="watch-msg" style="position:absolute; top:-30px; left:0; width:100%; font-size:10px; font-weight:900; color:var(--accent); display:none;">WATCHING MODE — POSITION FULL</div>
+            <div class="pos-tag" id="p-pos">...</div>
+            <h1 id="p-name">LOADING</h1>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
                 <div class="stat-box">
-                    <div class="stat-lbl">High Bid</div>
+                    <div style="font-size:10px; color:var(--text-dim);">HIGH BID</div>
                     <div class="stat-val" id="curr-bid" style="color:var(--accent);">₹5L</div>
-                    <span id="bidder-name">Opening</span>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-lbl">Seconds</div>
+                    <div style="font-size:10px; color:var(--text-dim);">TIMER</div>
                     <div class="stat-val" id="timer">10s</div>
                 </div>
             </div>
-
             <div class="bid-controls">
                 <div class="bid-row">
                     <button class="btn btn-bid" id="bid-btn" disabled>PLACE BID</button>
-                    <button class="btn btn-custom" onclick="openCustom()"><i class="fas fa-keyboard"></i></button>
+                    <button class="btn btn-outline" onclick="openCustom()"><i class="fas fa-keyboard"></i></button>
                 </div>
-                <div id="bid-error"></div>
+                <div id="bid-error" style="font-size:11px; color:var(--error); margin-top:8px; font-weight:700;"></div>
             </div>
         </div>
-        <div class="version-info">STABLE v1.0.0 (BETA)</div>
     </main>
 
-    <div class="footer-counts">
-        <div class="count-item">GK <span id="c-gk">0/3</span></div>
-        <div class="count-item">DEF <span id="c-def">0/5</span></div>
-        <div class="count-item">MID <span id="c-mid">0/5</span></div>
-        <div class="count-item">FWD <span id="c-fwd">0/5</span></div>
-        <div class="count-item">SQUAD <span id="c-total">0/18</span></div>
-    </div>
+    <div class="footer-counts" id="counts"></div>
 
     <div id="admin-area" class="admin-tray">
-        <button class="admin-btn btn-p" id="pause-btn">PAUSE</button>
-        <button class="admin-btn btn-d" id="dismiss-btn">DISMISS</button>
-        <button class="admin-btn btn-e" onclick="confirmEnd()">EMERGENCY</button>
+        <button class="btn btn-outline" style="flex:1;" id="pause-btn">PAUSE</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="if(confirm('Force Stop & Save Current Teams?')) socket.emit('forceStop')">FORCE STOP</button>
     </div>
 
-    <!-- Squad/Global Modal -->
+    <!-- Universal Modal -->
     <div class="modal-overlay" id="modal">
         <div class="modal-card">
-            <div class="modal-header">
-                <div class="modal-tabs">
-                    <div class="tab" id="tab-my" onclick="showTab('my')">MY SQUAD</div>
-                    <div class="tab" id="tab-all" onclick="showTab('all')">ALL TEAMS</div>
-                </div>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
+            <div class="modal-tabs">
+                <div class="tab" id="tab-my" onclick="showTab('my')">MY SQUAD</div>
+                <div class="tab" id="tab-all" onclick="showTab('all')">GLOBAL SALES</div>
             </div>
             <div class="roster-list" id="list"></div>
+            <button class="btn btn-outline w-full" onclick="closeModal()">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- Are You Here Modal -->
+    <div class="modal-overlay" id="here-modal">
+        <div class="modal-card">
+            <h2 style="font-family:Syne; color:var(--accent);">ARE YOU THERE?</h2>
+            <p style="margin:20px 0; color:var(--text-dim);">You have been inactive for 10 mins. Click to stay in the arena!</p>
+            <button class="btn btn-accent w-full" onclick="iAmHere()">YES, I'M HERE BRO</button>
         </div>
     </div>
 
@@ -172,173 +126,120 @@
     <script>
         const socket = io('/auction');
         const user = JSON.parse(localStorage.getItem('auctionUser'));
-        if(!user) window.location.href = '/auction/login';
+        if(!user) location.href = '/auction/login';
 
-        let lastT = 0;
-        let tInt = null;
-        let lastBid = 0;
-        let currentPos = '';
-        let gameState = null;
-        let activeTab = 'my';
+        let lastT = 0, tInt = null, lastBid = 0, gS = null, activeTab = 'my';
 
-        function formatM(l) { return l < 100 ? `₹${l} Lakh` : `₹${(l/100).toFixed(2)} Crore`; }
+        function formatM(l) { return l < 100 ? `₹${l}L` : `₹${(l/100).toFixed(2)}Cr`; }
         function showT(m) { const t = document.getElementById('toast'); t.textContent = m; t.className = 'show'; setTimeout(() => t.className = '', 3000); }
 
-        function showBidNotif(msg) {
-            const el = document.getElementById('bid-msg');
-            el.textContent = msg;
-            el.classList.add('show');
-            setTimeout(() => el.classList.remove('show'), 2000);
-        }
-
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
-        socket.on('notification', (d) => {
-            showT(d.message);
-            if(d.type === 'error') {
-                const err = document.getElementById('bid-error');
-                err.textContent = d.message;
-                setTimeout(() => { if(err.textContent === d.message) err.textContent = ''; }, 4000);
-            }
-        });
+        socket.on('notification', d => showT(d.message));
+        socket.on('areYouHere', () => document.getElementById('here-modal').style.display = 'flex');
+        socket.on('redirect', url => location.href = url);
 
-        socket.on('stateUpdate', (s) => {
-            gameState = s;
-            if (s.gameStatus === 'finished') { window.location.href = '/auction/results'; return; }
-            document.getElementById('pause-banner').style.display = s.isPaused ? 'block' : 'none';
-            if (user.isAuctionAdmin) {
+        socket.on('stateUpdate', s => {
+            gS = s;
+            if(s.gameStatus === 'finished') location.href = '/auction/results';
+
+            document.getElementById('p-bar').innerHTML = s.players.map(p => `
+                <div class="p-chip">
+                    <div class="p-dot ${p.connected ? 'online' : ''}"></div>
+                    <span class="p-init">${p.name.charAt(0)}</span>
+                    <span style="font-size:10px; font-weight:700;">${p.name}</span>
+                </div>
+            `).join('');
+
+            if(user.isAuctionAdmin) {
                 document.getElementById('admin-area').style.display = 'flex';
-                const pb = document.getElementById('pause-btn');
-                pb.textContent = s.isPaused ? 'RESUME' : 'PAUSE';
-                pb.onclick = () => socket.emit(s.isPaused ? 'resume' : 'pause');
+                document.getElementById('pause-btn').textContent = s.isPaused ? 'RESUME' : 'PAUSE';
+                document.getElementById('pause-btn').onclick = () => socket.emit(s.isPaused ? 'resume' : 'pause');
             }
-
-            if (s.currentPlayer) {
+            if(s.currentPlayer) {
                 const el = document.getElementById('p-pos');
                 el.textContent = s.currentPlayer.position;
-                el.className = 'pos-tag ' + ('pos-' + s.currentPlayer.position.toLowerCase());
+                el.className = 'pos-tag pos-' + s.currentPlayer.position.toLowerCase();
                 document.getElementById('p-name').textContent = s.currentPlayer.name.toUpperCase();
-                currentPos = s.currentPlayer.position;
             }
-
             if(s.currentBid !== lastBid && lastBid !== 0) {
-                showBidNotif(`${s.currentBidder.toUpperCase()} BID ${formatM(s.currentBid)}!`);
+                const bmsg = document.getElementById('bid-msg');
+                bmsg.textContent = `${s.currentBidder} BID ${formatM(s.currentBid)}`;
+                bmsg.className = 'show';
+                setTimeout(() => bmsg.className = '', 2000);
             }
             lastBid = s.currentBid;
-
             document.getElementById('curr-bid').textContent = formatM(s.currentBid);
-            document.getElementById('bidder-name').textContent = s.currentBidder ? `By ${s.currentBidder}` : 'Opening price';
-
-            const bb = document.getElementById('bid-btn');
-            const next = s.currentBid + 5;
-            bb.textContent = `BID ${formatM(next)}`;
 
             const me = s.players.find(x => x.name === user.name);
-            if (me) {
-                document.getElementById('u-budget').textContent = '💰 ' + formatM(me.budget);
-                const counts = { GK: 3, DEF: 5, MID: 5, FWD: 5 };
-                ['gk','def','mid','fwd'].forEach(p => {
-                    const val = me.positions[p.toUpperCase()];
-                    const el = document.getElementById('c-' + p);
-                    el.textContent = val + '/' + counts[p.toUpperCase()];
-                    el.className = val >= counts[p.toUpperCase()] ? 'full' : '';
-                });
-                document.getElementById('c-total').textContent = me.teamSize + '/18';
+            if(me) {
+                document.getElementById('u-budget').textContent = formatM(me.budget);
+                document.getElementById('counts').innerHTML = `
+                    <span>GK ${me.positions.GK}/3</span>
+                    <span>DEF ${me.positions.DEF}/5</span>
+                    <span>MID ${me.positions.MID}/5</span>
+                    <span>FWD ${me.positions.FWD}/5</span>
+                `;
 
-                // Real-time button validation
-                let error = '';
-                const emptySlots = 18 - me.teamSize;
-                const reserve = (emptySlots - 1) * 10;
-                const isPosFull = me.positions[currentPos] >= counts[currentPos];
+                const posFull = me.positions[s.currentPlayer?.position] >= (s.currentPlayer?.position==='GK'?3:5);
+                document.getElementById('watch-msg').style.display = posFull ? 'block' : 'none';
 
-                if (s.isPaused) error = 'Auction Paused';
-                else if (s.currentBidder === user.name) error = 'You are highest bidder';
-                else if (me.teamSize >= 18) error = 'Squad is full (18/18)';
-                else if (isPosFull) error = currentPos + ' position is full';
-                else if (me.budget < next) error = 'Insufficient budget';
-                else if (me.budget - next < reserve) error = `Reserve ₹${reserve}L required`;
+                const bb = document.getElementById('bid-btn');
+                const next = s.currentBid + 5;
+                bb.textContent = `BID ${formatM(next)}`;
+                bb.disabled = (s.currentBidder === user.name || s.isPaused || me.budget < next || posFull || me.teamSize >= 18);
+                bb.onclick = () => socket.emit('bid', next);
 
-                bb.disabled = error !== '';
-                document.getElementById('bid-error').textContent = error;
-                document.getElementById('watch-mode').style.display = isPosFull ? 'block' : 'none';
-
-                if(document.getElementById('modal').style.display === 'flex') updateModal();
+                if(document.getElementById('modal').style.display === 'flex') renderList();
             }
 
-            bb.onclick = () => socket.emit('bid', next);
-
-            if (s.timerEnd !== lastT) { lastT = s.timerEnd; runT(s.timerEnd, s.isPaused); }
-
-            if (user.isAuctionAdmin) {
-                const rem = Math.floor((s.timerEnd - Date.now()) / 1000);
-                const db = document.getElementById('dismiss-btn');
-                if (!s.currentBidder && rem <= 5 && rem > 0) {
-                    db.style.display = 'block';
-                    db.onclick = () => socket.emit('dismiss');
-                } else db.style.display = 'none';
+            if(s.timerEnd !== lastT) {
+                lastT = s.timerEnd;
+                if(tInt) clearInterval(tInt);
+                tInt = setInterval(() => {
+                    const rem = Math.max(0, Math.floor((s.timerEnd - Date.now()) / 1000));
+                    const d = document.getElementById('timer');
+                    d.textContent = rem + 's';
+                    d.className = rem <= 3 ? 'stat-val urgent' : 'stat-val';
+                }, 100);
             }
         });
 
-        function runT(e, p) {
-            if (tInt) clearInterval(tInt);
-            if (p) { const rem = Math.max(0, Math.floor((e - Date.now()) / 1000)); document.getElementById('timer').textContent = rem + 's'; return; }
-            tInt = setInterval(() => {
-                const rem = Math.max(0, Math.floor((e - Date.now()) / 1000));
-                const d = document.getElementById('timer');
-                d.textContent = rem + 's';
-                if (rem <= 3) d.className = 'stat-val urgent'; else d.className = 'stat-val';
-                if (rem <= 0) clearInterval(tInt);
-            }, 100);
-        }
-
+        function leaveArena() { if(confirm('Leave Arena? ALL progress and your team will be PERMANENTLY lost.')) socket.emit('leaveArena'); }
+        function iAmHere() { document.getElementById('here-modal').style.display = 'none'; socket.emit('iAmHere'); }
         function openCustom() {
-            const v = prompt("Amount (Lakhs, multiple of 5):");
-            const a = parseInt(v);
-            if (!isNaN(a) && a % 5 === 0) socket.emit('bid', a);
-            else if (v !== null) alert("Error: Use multiples of 5.");
+            const a = parseInt(prompt("Amount in Lakhs (multiple of 5):"));
+            if(a && a % 5 === 0) socket.emit('bid', a);
         }
-
-        function confirmEnd() { if (prompt('Type "END" to confirm termination:') === 'END') socket.emit('emergencyEnd', 'END'); }
-
-        function openModal(t) { activeTab = t; document.getElementById('modal').style.display = 'flex'; updateModal(); }
+        function openModal(t) { activeTab = t; document.getElementById('modal').style.display = 'flex'; renderList(); }
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
-        function showTab(t) { activeTab = t; updateModal(); }
+        function showTab(t) { activeTab = t; renderList(); }
 
-        function updateModal() {
+        function renderList() {
             const list = document.getElementById('list');
             document.getElementById('tab-my').className = activeTab === 'my' ? 'tab active' : 'tab';
             document.getElementById('tab-all').className = activeTab === 'all' ? 'tab active' : 'tab';
 
-            if (activeTab === 'my') {
-                const me = gameState.players.find(x => x.name === user.name);
-                if (!me || me.team.length === 0) list.innerHTML = '<div style="color:var(--text-dim); text-align:center; padding:40px; font-size:13px;">No players bought yet.</div>';
-                else {
-                    list.innerHTML = me.team.map(p => `
-                        <div class="roster-item">
-                            <div><span class="name">${p.name}</span><span class="pos">${p.position}</span></div>
-                            <span class="price">${formatM(p.price)}</span>
-                        </div>
-                    `).reverse().join('');
-                }
+            if(activeTab === 'my') {
+                const me = gS.players.find(x => x.name === user.name);
+                list.innerHTML = me.team.map(p => `
+                    <div class="roster-item">
+                        <span>${p.name} <span style="font-size:9px; color:var(--text-dim)">${p.position}</span></span>
+                        <span style="color:var(--accent); font-weight:800">${formatM(p.price)}</span>
+                    </div>
+                `).reverse().join('') || '<div style="text-align:center; padding:20px; color:var(--text-dim)">Empty squad.</div>';
             } else {
-                let html = '';
-                const allSales = [];
-                gameState.players.forEach(p => {
-                    p.team.forEach(tp => allSales.push({...tp, owner: p.name}));
-                });
-                allSales.sort((a,b) => b.price - a.price); // Show highest sales first
-
-                if (allSales.length === 0) list.innerHTML = '<div style="color:var(--text-dim); text-align:center; padding:40px; font-size:13px;">No sales recorded.</div>';
-                else {
-                    list.innerHTML = allSales.map(s => `
-                        <div class="roster-item global-item">
-                            <div>
-                                <div class="owner">${s.owner}</div>
-                                <span class="name">${s.name}</span><span class="pos">${s.pos || s.position}</span>
-                            </div>
-                            <span class="price">${formatM(s.price)}</span>
+                let sales = [];
+                gS.players.forEach(p => p.team.forEach(t => sales.push({...t, owner: p.name})));
+                sales.sort((a,b) => b.price - a.price);
+                list.innerHTML = sales.map(s => `
+                    <div class="roster-item" style="border-left:2px solid var(--accent)">
+                        <div>
+                            <span class="owner">${s.owner.toUpperCase()}</span>
+                            <span>${s.name} <span style="font-size:9px; color:var(--text-dim)">${s.position}</span></span>
                         </div>
-                    `).join('');
-                }
+                        <span style="color:var(--accent); font-weight:800">${formatM(s.price)}</span>
+                    </div>
+                `).join('') || '<div style="text-align:center; padding:20px; color:var(--text-dim)">No sales yet.</div>';
             }
         }
     </script>
