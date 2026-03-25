@@ -1,13 +1,11 @@
 const { Chess } = require('chess.js');
 
-module.exports = (io) => {
+module.exports = (io, trackActivity) => {
     const ns = io.of('/chess');
     const activeGames = new Map();
 
     ns.on('connection', (socket) => {
         socket.on('joinGame', ({ gameId, player }) => {
-            socket.join(gameId);
-            socket.playerName = player;
             let g = activeGames.get(gameId);
 
             if (!g) {
@@ -20,10 +18,20 @@ module.exports = (io) => {
                     gameActive: true
                 };
                 activeGames.set(gameId, g);
-            } else if (!g.black && g.white !== player) {
-                g.black = player;
-                g.lastMove = Date.now();
+                trackActivity(player, 'chess_created', { gameId });
+            } else {
+                if (!g.black && g.white !== player) {
+                    g.black = player;
+                    g.lastMove = Date.now();
+                    trackActivity(player, 'chess_joined', { gameId, opponent: g.white });
+                } else if (g.white !== player && g.black !== player) {
+                    socket.emit('error', 'Game room is full. Please try another link.');
+                    return;
+                }
             }
+
+            socket.join(gameId);
+            socket.playerName = player;
 
             ns.to(gameId).emit('gameState', {
                 fen: g.chess.fen(),
@@ -38,7 +46,6 @@ module.exports = (io) => {
             const g = activeGames.get(gameId);
             if (!g || !g.gameActive) return;
 
-            // Verify turn
             const turnColor = g.chess.turn();
             const turnPlayer = turnColor === 'w' ? g.white : g.black;
             if (socket.playerName !== turnPlayer) return;
@@ -63,6 +70,9 @@ module.exports = (io) => {
                         let res = 'Draw';
                         if (g.chess.in_checkmate()) {
                             res = `Checkmate! Winner: ${socket.playerName}`;
+                            trackActivity(socket.playerName, 'chess_won', { gameId });
+                        } else {
+                            trackActivity(socket.playerName, 'chess_draw', { gameId });
                         }
                         ns.to(gameId).emit('gameOver', { result: res });
                     }
@@ -81,6 +91,7 @@ module.exports = (io) => {
             if (g) {
                 g.gameActive = false;
                 ns.to(gameId).emit('gameOver', { result: 'Draw by agreement' });
+                trackActivity(socket.playerName, 'chess_draw_accepted', { gameId });
             }
         });
 
@@ -90,6 +101,7 @@ module.exports = (io) => {
                 g.gameActive = false;
                 const winner = socket.playerName === g.white ? g.black : g.white;
                 ns.to(gameId).emit('gameOver', { result: `Game over. Winner: ${winner}` });
+                trackActivity(socket.playerName, 'chess_resigned', { gameId });
             }
         });
     });

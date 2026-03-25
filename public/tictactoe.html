@@ -4,40 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tic Tac Toe — Mejores Amigos</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #FFFFFF; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; background: var(--bg); }
+        .header { width: 100%; padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 
-        .header { width: 100%; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #EEEEEE; }
-        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #111111; }
-        .logo img { width: 32px; height: 32px; border-radius: 8px; }
-        .logo span { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
+        .game-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; width: 100%; max-width: 440px; }
+        .status { margin-bottom: 24px; font-family: 'Syne'; font-size: 22px; font-weight: 800; color: var(--accent); text-align: center; min-height: 33px; }
 
-        .game-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; width: 100%; max-width: 500px; }
-        .status { margin-bottom: 32px; font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; aspect-ratio: 1/1; margin-bottom: 32px; }
+        .cell { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 52px; font-weight: 800; font-family: 'Syne'; cursor: pointer; transition: 0.2s; color: #fff; }
+        .cell:hover { border-color: var(--accent); background: rgba(255,255,255,0.02); }
+        .cell.X { color: var(--accent); }
+        .cell.O { color: #3b82f6; }
 
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; aspect-ratio: 1/1; }
-        .cell { background: #F8F9FA; border: 1px solid #EEEEEE; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 800; font-family: 'Syne'; cursor: pointer; transition: 0.2s; }
-        .cell:hover { background: #fff; border-color: #111; }
-        .cell.X { color: #111111; }
-        .cell.O { color: #F5B942; }
+        .player-info-bar { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .p-badge { background: var(--surface); border: 1px solid var(--border); padding: 12px; border-radius: 16px; text-align: center; }
+        .p-badge.active { border-color: var(--accent); background: rgba(245, 185, 66, 0.05); }
+        .p-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+        .p-name { font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .score { font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px; }
 
-        .invite-btn { margin-top: 32px; color: #F5B942; font-weight: 700; cursor: pointer; border: none; background: none; font-size: 14px; }
+        .invite-section { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 24px; width: 100%; text-align: center; }
+        .copy-trigger { color: var(--accent); font-weight: 800; cursor: pointer; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; }
     </style>
 </head>
 <body>
     <header class="header">
-        <a href="/games.html" style="text-decoration:none; color:#666; font-size:14px; font-weight:600;"><i class="fas fa-arrow-left"></i> Back</a>
-        <div class="logo"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s"><span>Tic Tac Toe</span></div>
+        <a href="/games" style="text-decoration:none; color:var(--text-dim); font-size:14px; font-weight:700;"><i class="fas fa-arrow-left"></i> Games</a>
+        <h2 style="font-size:16px; color:#fff;">Tic Tac Toe</h2>
         <div style="width:50px;"></div>
     </header>
 
     <main class="game-area">
-        <div class="status" id="status">Connecting...</div>
-        <div class="grid" id="grid">
+        <div class="status" id="status">Waiting...</div>
+
+        <div id="invite-box" class="invite-section animate-up">
+            <p style="font-size: 14px; color: var(--text-dim); line-height: 1.5;">Waiting for a challenger.<br>Share the link to play!</p>
+            <div class="copy-trigger" id="copy-btn"><i class="fas fa-link"></i> <span>Copy Invite Link</span></div>
+        </div>
+
+        <div class="player-info-bar" id="game-stats" style="display: none;">
+            <div class="p-badge" id="badge-X">
+                <div class="p-label">Player X</div>
+                <div class="p-name" id="name-x">...</div>
+                <div class="score" id="score-x">0</div>
+            </div>
+            <div class="p-badge" id="badge-O">
+                <div class="p-label">Player O</div>
+                <div class="p-name" id="name-o">...</div>
+                <div class="score" id="score-o">0</div>
+            </div>
+        </div>
+
+        <div class="grid" id="board" style="display: none;">
             <div class="cell" onclick="makeMove(0)"></div>
             <div class="cell" onclick="makeMove(1)"></div>
             <div class="cell" onclick="makeMove(2)"></div>
@@ -48,7 +69,8 @@
             <div class="cell" onclick="makeMove(7)"></div>
             <div class="cell" onclick="makeMove(8)"></div>
         </div>
-        <button class="invite-btn" id="inviteBtn"><i class="fas fa-link"></i> Copy Invite Link</button>
+
+        <button class="btn btn-primary w-full" id="reset-game" style="display: none;" onclick="socket.emit('resetGame', {gameId})">Play Again</button>
     </main>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -62,19 +84,57 @@
 
         let mySymbol = null;
         let turn = 'X';
+        let isReady = false;
 
         socket.emit('joinGame', { gameId, player: user.name });
-        socket.on('gameState', (g) => {
-            if (g.X === user.name) mySymbol = 'X'; else if (g.O === user.name) mySymbol = 'O'; else if (!g.O) mySymbol = 'O';
-            turn = g.turn;
-            const cells = document.querySelectorAll('.cell');
-            g.board.forEach((v, i) => { cells[i].textContent = v; cells[i].className = 'cell ' + v; });
-            document.getElementById('status').textContent = g.active ? (turn === mySymbol ? "Your Turn ("+mySymbol+")" : "Waiting for " + turn) : "Game Over";
-        });
-        socket.on('gameOver', (d) => { alert(d.winner === 'Draw' ? 'Draw!' : d.winner + ' Won!'); document.getElementById('status').textContent = d.winner + ' wins!'; });
 
-        function makeMove(i) { if(turn === mySymbol) socket.emit('move', { gameId, index: i, symbol: mySymbol }); }
-        document.getElementById('inviteBtn').onclick = () => { navigator.clipboard.writeText(window.location.href); alert('Link Copied!'); };
+        socket.on('gameState', (g) => {
+            if (g.X === user.name) mySymbol = 'X';
+            else if (g.O === user.name) mySymbol = 'O';
+
+            if (g.X && g.O) {
+                isReady = true;
+                document.getElementById('board').style.display = 'grid';
+                document.getElementById('game-stats').style.display = 'grid';
+                document.getElementById('invite-box').style.display = 'none';
+            }
+
+            turn = g.turn;
+            document.getElementById('name-x').textContent = g.X || 'Waiting...';
+            document.getElementById('name-o').textContent = g.O || 'Waiting...';
+            document.getElementById('score-x').textContent = g.scores.X;
+            document.getElementById('score-o').textContent = g.scores.O;
+
+            document.getElementById('badge-X').classList.toggle('active', turn === 'X');
+            document.getElementById('badge-O').classList.toggle('active', turn === 'O');
+
+            const cells = document.querySelectorAll('.cell');
+            g.board.forEach((v, i) => {
+                cells[i].textContent = v;
+                cells[i].className = 'cell ' + v;
+            });
+
+            document.getElementById('reset-game').style.display = g.active ? 'none' : 'inline-flex';
+
+            if (!g.active) document.getElementById('status').textContent = "Game Over";
+            else document.getElementById('status').textContent = turn === mySymbol ? "Your Turn ("+mySymbol+")" : "Opponent's Turn";
+        });
+
+        socket.on('gameOver', (d) => {
+            alert(d.winner === 'Draw' ? "It's a Draw!" : (d.winner === mySymbol ? "You Won! 🎉" : "You Lost... 💀"));
+        });
+
+        function makeMove(i) {
+            if(!isReady) return;
+            if(turn === mySymbol) socket.emit('move', { gameId, index: i, symbol: mySymbol });
+        }
+
+        document.getElementById('copy-btn').onclick = () => {
+            navigator.clipboard.writeText(window.location.href);
+            const span = document.querySelector('#copy-btn span');
+            span.textContent = 'Copied!';
+            setTimeout(() => { span.textContent = 'Copy Invite Link'; }, 2000);
+        };
     </script>
 </body>
 </html>

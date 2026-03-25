@@ -8,7 +8,6 @@ async function checkAuth() {
                 return data.user;
             }
         } else if (res.status === 401) {
-            // FIX: Clear local storage on 401 Unauthorized
             localStorage.removeItem('mejoresAmigosUser');
         }
     } catch (e) {
@@ -19,9 +18,11 @@ async function checkAuth() {
 
 function getStoredUser() {
     try {
-        return JSON.parse(localStorage.getItem('mejoresAmigosUser'));
+        return JSON.parse(localStorage.getItem('mejoresAmigosUser')) ||
+               JSON.parse(localStorage.getItem('auctionUser')) ||
+               { name: 'Unknown User' };
     } catch (e) {
-        return null;
+        return { name: 'Unknown User' };
     }
 }
 
@@ -30,5 +31,6 @@ async function handleLogout() {
         await fetch('/api/logout', { method: 'POST' });
     } catch (e) {}
     localStorage.removeItem('mejoresAmigosUser');
+    localStorage.removeItem('auctionUser');
     window.location.href = '/index.html';
 }

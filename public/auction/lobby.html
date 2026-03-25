@@ -4,53 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lobby — Mejores Amigos</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #FFFFFF; font-family: 'Inter', sans-serif; min-height: 100vh; padding: 24px; display: flex; flex-direction: column; align-items: center; }
-        .lobby-card { width: 100%; max-width: 500px; background: #fff; border: 1px solid #EEEEEE; border-radius: 32px; padding: 32px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); }
-        h1 { font-family: 'Syne'; font-size: 32px; margin-bottom: 8px; }
-        .status-msg { color: #666; font-size: 14px; margin-bottom: 32px; }
+        body { background: var(--bg); font-family: 'Inter', sans-serif; min-height: 100vh; padding: 24px; display: flex; flex-direction: column; align-items: center; }
+        .lobby-card { width: 100%; max-width: 500px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 32px; padding: 32px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); position: relative; }
+        h1 { font-family: 'Syne'; font-size: 32px; margin-bottom: 8px; color: #fff; text-align: center; }
+        .status-msg { color: var(--text-dim); font-size: 14px; margin-bottom: 32px; text-align: center; font-weight: 500; }
+
         .p-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
-        .p-item { background: #F9F9FB; border: 1px solid #EEEEEE; padding: 16px 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
-        .btn { width: 100%; padding: 20px; border-radius: 18px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 16px; }
-        .btn-start { background: #111; color: #fff; display: none; }
-        .btn-start:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-exit { background: #F9F9FB; color: #666; border: 1px solid #EEEEEE; margin-top: 12px; }
+        .p-item { background: var(--surface); border: 1px solid var(--border); padding: 16px 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; transition: 0.2s; }
+        .p-item:hover { border-color: rgba(255,255,255,0.2); }
+
+        .remove-btn { color: var(--error); background: none; border: none; cursor: pointer; font-size: 14px; padding: 8px; opacity: 0.6; transition: 0.2s; }
+        .remove-btn:hover { opacity: 1; transform: scale(1.1); }
+
+        .btn-start { background: var(--accent); color: #000; width: 100%; display: none; }
+        .btn-start:disabled { background: var(--surface); color: var(--text-dim); cursor: not-allowed; opacity: 0.5; }
+
+        .warning-box { background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.2); color: var(--error); padding: 12px; border-radius: 12px; font-size: 12px; margin-bottom: 20px; text-align: center; display: none; font-weight: 600; }
+
+        .invite-btn { position: absolute; top: 20px; right: 20px; background: rgba(245, 185, 66, 0.1); color: var(--accent); border: 1px solid rgba(245, 185, 66, 0.2); padding: 8px 16px; border-radius: 100px; font-size: 11px; font-weight: 800; cursor: pointer; transition: 0.2s; display: none; }
+        .invite-btn:hover { background: var(--accent); color: #000; }
     </style>
 </head>
 <body>
-    <div class="lobby-card">
+    <div class="lobby-card animate-up">
+        <button id="invite-btn" class="invite-btn"><i class="fas fa-link"></i> INVITE</button>
+
+        <div class="flex items-center justify-center mb-3">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo-round" style="width:48px; height:48px;">
+        </div>
         <h1>Auction Lobby</h1>
-        <div class="status-msg" id="msg">Waiting for players...</div>
+        <div class="status-msg" id="msg">Syncing with arena...</div>
+
+        <div id="warning" class="warning-box">Need at least 4 players to start the auction.</div>
+
         <div class="p-list" id="p-list"></div>
+
         <button class="btn btn-start" id="start-btn" disabled>START AUCTION</button>
-        <button class="btn btn-exit" onclick="location.href='/games.html'">EXIT</button>
+        <button class="btn btn-outline w-full mt-2" onclick="location.href='/games'">EXIT TO GAMES</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const user = JSON.parse(localStorage.getItem('auctionUser'));
         if(!user) location.href='/auction/login';
+
         const socket = io('/auction');
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
+
         socket.on('stateUpdate', (s) => {
             const list = document.getElementById('p-list');
-            list.innerHTML = s.players.map(p => `<div class="p-item"><span>${p.isAdmin ? '👑 ' : ''}${p.name}</span><div class="status-dot"></div></div>`).join('');
+            list.innerHTML = s.players.map(p => `
+                <div class="p-item">
+                    <span>${p.isAdmin ? '👑 ' : ''}${p.name}</span>
+                    ${(user.isAuctionAdmin && p.name !== user.name) ? `<button class="remove-btn" onclick="removePlayer('${p.name}')"><i class="fas fa-user-minus"></i></button>` : '<div class="p-dot" style="width:8px; height:8px; border-radius:50%; background:#22C55E;"></div>'}
+                </div>
+            `).join('');
+
             const btn = document.getElementById('start-btn');
+            const warn = document.getElementById('warning');
+            const invite = document.getElementById('invite-btn');
+
             if(user.isAuctionAdmin) {
-                btn.style.display = 'block';
+                btn.style.display = 'inline-flex';
+                invite.style.display = 'block';
                 btn.disabled = s.players.length < 4;
-                document.getElementById('msg').textContent = `Ready with ${s.players.length} players`;
+                warn.style.display = s.players.length < 4 ? 'block' : 'none';
+                document.getElementById('msg').textContent = `Ready to start with ${s.players.length}/8 players`;
             } else {
-                document.getElementById('msg').textContent = `${s.players.length}/8 players joined.`;
+                btn.style.display = 'none';
+                invite.style.display = 'none';
+                document.getElementById('msg').textContent = `${s.players.length}/8 players connected.`;
+                warn.style.display = s.players.length < 4 ? 'block' : 'none';
+                if(s.players.length < 4) warn.textContent = "Waiting for " + (4 - s.players.length) + " more players...";
+                else warn.textContent = "Waiting for admin to start...";
             }
+
             if(s.gameStatus === 'active') location.href = '/auction/index';
         });
-        socket.on('error', (m) => { alert(m); location.href='/games.html'; });
+
+        socket.on('error', (m) => { alert(m); location.href='/games'; });
+
+        function removePlayer(name) {
+            if(confirm('Remove ' + name + ' from lobby?')) {
+                socket.emit('removeUser', name);
+            }
+        }
+
         document.getElementById('start-btn').onclick = () => socket.emit('startAuction');
+        document.getElementById('invite-btn').onclick = () => {
+            const link = window.location.origin + '/auction/login?invite=true';
+            navigator.clipboard.writeText(link);
+            alert('Invite link copied to clipboard!');
+        };
     </script>
 </body>
 </html>

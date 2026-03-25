@@ -4,41 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Entertainment — Mejores Amigos</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #FFFFFF; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 
-        .header { padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #EEEEEE; background: #FFFFFF; position: sticky; top: 0; z-index: 100; }
-        .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #111111; }
-        .logo img { width: 40px; height: 40px; border-radius: 10px; }
-        .logo span { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
-        .back-btn { background: #F8F9FA; border: 1px solid #EEEEEE; padding: 10px 20px; border-radius: 40px; text-decoration: none; color: #111111; font-weight: 600; font-size: 14px; transition: 0.2s; }
-        .back-btn:hover { background: #EEEEEE; }
+        .header { padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background: rgba(10,10,15,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .back-btn { background: var(--surface); border: 1px solid var(--border); padding: 10px 20px; border-radius: 40px; text-decoration: none; color: #fff; font-weight: 700; font-size: 13px; transition: 0.2s; }
+        .back-btn:hover { background: rgba(255,255,255,0.1); }
 
         .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
 
         .stream-card {
-            background: #FFFFFF; border: 1px solid #EEEEEE; border-radius: 40px; padding: 60px 48px; text-align: center;
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 40px; padding: 60px 48px; text-align: center;
             max-width: 500px; width: 100%; transition: all 0.3s ease; cursor: pointer; text-decoration: none; display: block;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-bottom: 60px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3); margin-bottom: 60px;
         }
-        .stream-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); border-color: #F5B942; }
+        .stream-card:hover { transform: translateY(-8px); box-shadow: 0 20px 60px rgba(0,0,0,0.4); border-color: var(--accent); }
         .stream-icon { font-size: 80px; margin-bottom: 24px; }
-        .stream-card h2 { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: #111111; margin-bottom: 12px; }
-        .stream-card p { color: #666666; font-size: 16px; margin-bottom: 32px; }
-        .stream-btn { display: inline-flex; align-items: center; gap: 12px; background: #111111; color: #FFFFFF; padding: 16px 32px; border-radius: 60px; font-weight: 700; font-size: 16px; transition: 0.2s; }
-        .stream-card:hover .stream-btn { background: #F5B942; color: #111111; gap: 16px; }
+        .stream-card h2 { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 12px; }
+        .stream-card p { color: var(--text-dim); font-size: 16px; margin-bottom: 32px; }
+        .stream-btn { display: inline-flex; align-items: center; gap: 12px; background: #fff; color: #000; padding: 16px 32px; border-radius: 60px; font-weight: 800; font-size: 16px; transition: 0.2s; }
+        .stream-card:hover .stream-btn { background: var(--accent); gap: 16px; }
 
         .featured-row { width: 100%; max-width: 1200px; }
-        .row-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 20px; color: #111111; display: flex; align-items: center; gap: 10px; }
-        .row-scroll { display: flex; gap: 16px; overflow-x: auto; scrollbar-width: none; padding-bottom: 16px; }
+        .row-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 24px; color: #fff; display: flex; align-items: center; gap: 12px; }
+        .row-scroll { display: flex; gap: 20px; overflow-x: auto; scrollbar-width: none; padding-bottom: 16px; }
         .row-scroll::-webkit-scrollbar { display: none; }
-        .poster-card { flex: 0 0 160px; aspect-ratio: 2/3; background: #F8F9FA; border-radius: 20px; overflow: hidden; border: 1px solid #EEEEEE; transition: 0.3s; position: relative; }
+        .poster-card { flex: 0 0 160px; aspect-ratio: 2/3; background: var(--surface); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); transition: 0.3s; position: relative; }
         .poster-card img { width: 100%; height: 100%; object-fit: cover; }
-        .poster-card:hover { transform: scale(1.05); border-color: #F5B942; }
+        .poster-card:hover { transform: scale(1.05); border-color: var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
         @media (max-width: 768px) {
             .header { padding: 16px 20px; }
@@ -51,26 +46,26 @@
 </head>
 <body>
     <header class="header">
-        <a href="/hub.html" class="logo">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" alt="Logo">
-            <span>Entertainment</span>
-        </a>
-        <a href="/hub.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+        <div class="flex items-center gap-3">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo-round" style="width:32px; height:32px;">
+            <h2 style="font-size:18px; color:#fff;">Entertainment</h2>
+        </div>
+        <a href="/hub.html" class="back-btn"><i class="fas fa-arrow-left"></i> Hub</a>
     </header>
 
     <main class="main-content">
-        <a href="https://anikuro.ru/" target="_blank" class="stream-card" rel="noopener noreferrer">
+        <a href="https://anikuro.ru/" target="_blank" class="stream-card animate-up" rel="noopener noreferrer">
             <div class="stream-icon">📺</div>
             <h2>Stream Anime</h2>
-            <p>Watch the latest anime episodes in HD quality</p>
+            <p>Direct access to the best anime library</p>
             <div class="stream-btn">
                 <span>Watch Now</span>
-                <i class="fas fa-external-link-alt" style="font-size: 14px;"></i>
+                <i class="fas fa-external-link-alt"></i>
             </div>
         </a>
 
-        <div class="featured-row">
-            <div class="row-title">✨ Recommended For You</div>
+        <div class="featured-row animate-up" style="animation-delay: 0.2s">
+            <div class="row-title">🎬 Featured Picks</div>
             <div class="row-scroll">
                 <div class="poster-card"><img src="https://m.media-amazon.com/images/M/MV5BODCwNWE3OTItMDc3MS00NDFjLWE1OTAtNDU3Njg4ODCkXkZfXl6XfGFkbXk@._V1_.jpg" alt="One Piece"></div>
                 <div class="poster-card"><img src="https://m.media-amazon.com/images/I/918u0V4X0vL._AC_UF1000,1000_QL80_.jpg" alt="Naruto"></div>

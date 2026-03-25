@@ -3,141 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Auction — Mejores Amigos</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Live Arena — Mejores Amigos</title>
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        :root {
-            --bg: #FFFFFF;
-            --primary: #111111;
-            --accent: #F5B942;
-            --surface: #F9F9FB;
-            --text-dim: #666666;
-            --border: #EEEEEE;
-            --red: #FF4D4D;
-        }
+        body { background: #0a0a0f; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .header { background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .budget-pill { background: rgba(255,255,255,0.05); padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 800; border: 1px solid var(--border); color: var(--accent); }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--primary); min-height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .main-stage { flex: 1; padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
 
-        .header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fff; z-index: 100; }
-        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
-        .logo img { width: 32px; height: 32px; border-radius: 8px; }
-        .logo span { font-family: 'Syne'; font-size: 18px; font-weight: 800; }
-
-        .user-stats { display: flex; gap: 16px; align-items: center; }
-        .budget-pill { background: var(--surface); padding: 8px 16px; border-radius: 100px; font-weight: 800; font-size: 13px; border: 1px solid var(--border); color: var(--accent); }
-
-        .main-stage { flex: 1; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-
-        #pause-banner {
-            position: fixed; top: 0; left: 0; width: 100%; background: var(--accent); color: #000; padding: 12px;
-            text-align: center; font-weight: 800; font-family: 'Syne'; z-index: 1000; display: none;
-        }
+        #pause-banner { position: fixed; top: 0; left: 0; width: 100%; background: var(--accent); color: #000; padding: 10px; text-align: center; font-weight: 800; font-family: 'Syne'; z-index: 1000; display: none; }
 
         .player-card {
-            width: 100%; max-width: 440px; background: #fff; border-radius: 40px; border: 1px solid var(--border);
-            padding: 48px 32px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.04);
+            width: 100%; max-width: 400px; background: var(--bg-secondary); border-radius: 40px; border: 1px solid var(--border);
+            padding: 40px 24px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
             animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
         }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
-        .pos-tag {
-            background: var(--surface); padding: 6px 16px; border-radius: 100px; font-size: 12px; font-weight: 800;
-            letter-spacing: 1px; color: var(--accent); border: 1px solid var(--border); margin-bottom: 24px; display: inline-block;
-        }
+        .pos-tag { padding: 6px 16px; border-radius: 100px; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-bottom: 20px; display: inline-block; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.1); }
+        .pos-gk { background: #FACC15; color: #000; }
+        .pos-def { background: #3B82F6; color: #fff; }
+        .pos-mid { background: #22C55E; color: #fff; }
+        .pos-fwd { background: #EF4444; color: #fff; }
 
-        #p-name { font-family: 'Syne'; font-size: 40px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 32px; line-height: 1; color: var(--primary); }
+        #p-name { font-family: 'Syne'; font-size: 36px; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 32px; line-height: 1; color: #fff; text-transform: uppercase; }
 
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; margin-bottom: 32px; }
-        .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 24px; text-align: center; }
-        .stat-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; letter-spacing: 0.5px; }
-        .stat-val { font-size: 22px; font-weight: 800; font-family: 'Inter'; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; margin-bottom: 24px; }
+        .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; text-align: center; }
+        .stat-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; letter-spacing: 0.5px; }
+        .stat-val { font-size: 20px; font-weight: 800; }
 
-        #timer { color: var(--primary); }
-        #timer.urgent { color: var(--red); transform: scale(1.1); transition: 0.2s; }
+        #timer.urgent { color: var(--error); transform: scale(1.1); transition: 0.2s; animation: pulseRed 0.5s infinite alternate; }
+        @keyframes pulseRed { from { opacity: 1; } to { opacity: 0.6; } }
 
-        .controls { width: 100%; max-width: 440px; display: grid; grid-template-columns: 1fr 100px; gap: 12px; }
-        .btn { padding: 20px; border-radius: 20px; border: none; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-        .btn-bid { background: var(--primary); color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .btn-bid:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-custom { background: var(--surface); color: var(--primary); border: 1px solid var(--border); }
+        .bid-controls { width: 100%; max-width: 400px; display: grid; grid-template-columns: 1fr 80px; gap: 12px; }
+        .btn-bid { background: #fff; color: #000; box-shadow: 0 10px 30px rgba(255,255,255,0.1); flex: 1; }
+        .btn-bid:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-custom { background: var(--surface); border: 1px solid var(--border); color: #fff; width: 80px; }
 
-        #bidder-name { font-size: 13px; font-weight: 700; color: var(--text-dim); margin-top: 6px; display: block; }
+        #bidder-name { font-size: 12px; font-weight: 700; color: var(--text-dim); margin-top: 6px; display: block; }
 
-        /* Admin Bottom Tray */
-        .admin-tray {
-            position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid var(--border);
-            padding: 16px 24px; display: none; gap: 12px; z-index: 2000;
-        }
-        .admin-btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; }
-        .btn-pause { background: var(--surface); color: var(--primary); border: 1px solid var(--border); }
-        .btn-dismiss { background: var(--red); color: #fff; display: none; }
-        .btn-end { background: #000; color: #fff; }
+        .admin-tray { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; border-top: 1px solid var(--border); padding: 12px 20px; display: none; gap: 10px; z-index: 2000; }
+        .admin-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700; font-size: 12px; cursor: pointer; transition: 0.2s; }
+        .btn-p { background: var(--surface); color: #fff; border: 1px solid var(--border); }
+        .btn-d { background: var(--error); color: #fff; display: none; }
+        .btn-e { background: #fff; color: #000; }
 
-        #toast {
-            position: fixed; top: 24px; left: 50%; transform: translateX(-50%) translateY(-100px);
-            background: var(--primary); color: #fff; padding: 14px 28px; border-radius: 100px;
-            font-size: 14px; font-weight: 700; transition: 0.5s cubic-bezier(0.2, 1, 0.3, 1); z-index: 3000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
+        .footer-counts { background: var(--bg-secondary); padding: 12px; border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 15px; font-size: 10px; font-weight: 800; color: var(--text-dim); flex-wrap: wrap; }
+        .count-item span { color: #fff; }
+
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #fff; color: #000; padding: 12px 24px; border-radius: 100px; font-size: 13px; font-weight: 800; transition: 0.4s var(--trans); z-index: 3000; }
         #toast.show { transform: translateX(-50%) translateY(0); }
-
-        .footer-counts { background: var(--surface); padding: 16px; border-top: 1px solid var(--border); display: flex; justify-content: center; gap: 20px; font-size: 11px; font-weight: 800; color: var(--text-dim); }
-        .count-item span { color: var(--primary); }
     </style>
 </head>
 <body>
-    <div id="pause-banner">AUCTION PAUSED BY ADMIN</div>
+    <div id="pause-banner">PAUSED BY ADMIN</div>
     <div id="toast"></div>
 
     <header class="header">
-        <a href="/hub.html" class="logo">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s">
-            <span>Mejores Amigos</span>
+        <a href="/hub.html" class="flex items-center gap-2" style="text-decoration:none;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo-round" style="width:30px; height:30px;">
+            <span style="font-weight:800; color:#fff; font-size:16px;">Auction</span>
         </a>
-        <div class="user-stats">
-            <div class="budget-pill" id="u-budget">₹15.00 Crore</div>
-        </div>
+        <div class="budget-pill" id="u-budget">₹15.00 Crore</div>
     </header>
 
     <main class="main-stage">
         <div class="player-card">
-            <div class="pos-tag" id="p-pos">POSITION</div>
-            <h1 id="p-name">LOADING...</h1>
+            <div class="pos-tag" id="p-pos">GOALKEEPER</div>
+            <h1 id="p-name">SYNCING...</h1>
 
             <div class="stats-grid">
                 <div class="stat-box">
-                    <div class="stat-lbl">Highest Bid</div>
-                    <div class="stat-val" id="curr-bid">₹5 Lakh</div>
-                    <span id="bidder-name">Starting price</span>
+                    <div class="stat-lbl">High Bid</div>
+                    <div class="stat-val" id="curr-bid" style="color:var(--accent);">₹5L</div>
+                    <span id="bidder-name">Opening</span>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-lbl">Time Left</div>
+                    <div class="stat-lbl">Seconds</div>
                     <div class="stat-val" id="timer">10s</div>
                 </div>
             </div>
 
-            <div class="controls">
+            <div class="bid-controls">
                 <button class="btn btn-bid" id="bid-btn" disabled>PLACE BID</button>
-                <button class="btn btn-custom" onclick="openCustom()"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-custom" onclick="openCustom()"><i class="fas fa-keyboard"></i></button>
             </div>
         </div>
     </main>
 
-    <div class="footer-counts" id="f-counts">
+    <div class="footer-counts">
         <div class="count-item">GK <span id="c-gk">0/3</span></div>
         <div class="count-item">DEF <span id="c-def">0/5</span></div>
         <div class="count-item">MID <span id="c-mid">0/5</span></div>
         <div class="count-item">FWD <span id="c-fwd">0/5</span></div>
-        <div class="count-item">TOTAL <span id="c-total">0/18</span></div>
+        <div class="count-item">SQUAD <span id="c-total">0/18</span></div>
     </div>
 
     <div id="admin-area" class="admin-tray">
-        <button class="admin-btn btn-pause" id="pause-btn">PAUSE</button>
-        <button class="admin-btn btn-dismiss" id="dismiss-btn">DISMISS</button>
-        <button class="admin-btn btn-end" onclick="confirmEnd()">EMERGENCY END</button>
+        <button class="admin-btn btn-p" id="pause-btn">PAUSE</button>
+        <button class="admin-btn btn-d" id="dismiss-btn">DISMISS</button>
+        <button class="admin-btn btn-e" onclick="confirmEnd()">EMERGENCY</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -149,10 +117,7 @@
         let lastT = 0;
         let tInt = null;
 
-        function formatM(l) {
-            if (l < 100) return `₹${l} Lakh`;
-            return `₹${(l/100).toFixed(2)} Crore`;
-        }
+        function formatM(l) { return l < 100 ? `₹${l} Lakh` : `₹${(l/100).toFixed(2)} Crore`; }
         function showT(m) { const t = document.getElementById('toast'); t.textContent = m; t.className = 'show'; setTimeout(() => t.className = '', 3000); }
 
         socket.emit('joinAuction', { name: user.name, isAdmin: user.isAuctionAdmin });
@@ -169,12 +134,14 @@
             }
 
             if (s.currentPlayer) {
+                const el = document.getElementById('p-pos');
+                el.textContent = s.currentPlayer.position;
+                el.className = 'pos-tag ' + ('pos-' + s.currentPlayer.position.toLowerCase());
                 document.getElementById('p-name').textContent = s.currentPlayer.name.toUpperCase();
-                document.getElementById('p-pos').textContent = s.currentPlayer.position;
             }
 
             document.getElementById('curr-bid').textContent = formatM(s.currentBid);
-            document.getElementById('bidder-name').textContent = s.currentBidder ? `By ${s.currentBidder}` : 'Starting price';
+            document.getElementById('bidder-name').textContent = s.currentBidder ? `By ${s.currentBidder}` : 'Opening price';
 
             const bb = document.getElementById('bid-btn');
             const next = s.currentBid + 5;
@@ -217,13 +184,13 @@
         }
 
         function openCustom() {
-            const v = prompt("Enter amount in Lakhs (multiple of 5):");
+            const v = prompt("Amount (Lakhs, multiple of 5):");
             const a = parseInt(v);
             if (!isNaN(a) && a % 5 === 0) socket.emit('bid', a);
-            else if (v !== null) alert("Must be multiple of 5.");
+            else if (v !== null) alert("Error: Use multiples of 5.");
         }
 
-        function confirmEnd() { if (prompt('Type "END" to finish:') === 'END') socket.emit('emergencyEnd', 'END'); }
+        function confirmEnd() { if (prompt('Type "END" to confirm termination:') === 'END') socket.emit('emergencyEnd', 'END'); }
     </script>
 </body>
 </html>

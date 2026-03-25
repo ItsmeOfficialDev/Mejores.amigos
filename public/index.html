@@ -3,38 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mejores Amigos — Welcome</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <title>Mejores Amigos — Entry</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        :root { --bg: #ffffff; --primary: #111111; --accent: #f5b942; --surface: #f8f9fa; --border: #e9ecef; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--primary); min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .auth-container { width: 100%; max-width: 380px; padding: 40px 24px; text-align: center; }
-        .logo { width: 80px; height: 80px; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        h1 { font-family: 'Syne'; font-size: 32px; font-weight: 800; margin-bottom: 40px; letter-spacing: -1px; }
-        input { width: 100%; background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 16px; font-size: 16px; margin-bottom: 16px; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--primary); background: #fff; }
-        .btn { width: 100%; background: var(--primary); color: #fff; border: none; padding: 20px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .btn:hover { transform: translateY(-2px); }
-        #err { color: #ff4d4d; font-size: 14px; margin-top: 16px; display: none; }
+        body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; background: var(--bg); }
+        .entry-card { width: 100%; max-width: 360px; text-align: center; }
+        .logo { width: 100px; height: 100px; margin: 0 auto 32px; display: block; border-radius: 50%; box-shadow: 0 0 30px rgba(245, 185, 66, 0.2); }
+        h1 { font-size: 32px; margin-bottom: 8px; color: #fff; }
+        p { color: var(--text-dim); margin-bottom: 40px; font-weight: 500; font-size: 14px; }
+        form { display: flex; flex-direction: column; gap: 16px; }
     </style>
 </head>
 <body>
-    <div class="auth-container">
-        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo">
-        <h1>Welcome</h1>
-        <form id="login-form">
-            <input type="text" id="name" placeholder="Full Name" required autocomplete="off">
-            <input type="password" id="pass" placeholder="Admin Password" style="display:none;">
-            <button type="submit" class="btn">CONTINUE</button>
-            <div id="err"></div>
-        </form>
+    <div id="loading-overlay">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="loader-logo logo-round">
     </div>
+
+    <div class="entry-card animate-up">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQl5O38UyupxU5PU6W5jXASsMVPWHyg6ylDIg&s" class="logo logo-round">
+        <h1>Mejores Amigos</h1>
+        <p>Elite Community Hub</p>
+
+        <form id="login-form">
+            <input type="text" id="name" class="input-field" placeholder="Full Name" required autocomplete="off">
+            <input type="password" id="pass" class="input-field" placeholder="Admin Password" style="display:none;">
+            <button type="submit" class="btn btn-accent w-full">CONTINUE</button>
+        </form>
+        <div id="err" style="color:var(--error); font-size:12px; margin-top:16px; display:none;"></div>
+    </div>
+
+    <script src="/js/auth.js"></script>
     <script>
         const ni = document.getElementById('name');
         const pi = document.getElementById('pass');
+        const overlay = document.getElementById('loading-overlay');
+
+        window.onload = async () => {
+            const user = await checkAuth();
+            if (user) { location.href = '/hub.html'; }
+            else {
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.style.display = 'none', 500);
+            }
+        };
+
         ni.oninput = () => { pi.style.display = ni.value.toLowerCase() === 'admin' ? 'block' : 'none'; };
+
         document.getElementById('login-form').onsubmit = async (e) => {
             e.preventDefault();
             const res = await fetch('/api/login', {
