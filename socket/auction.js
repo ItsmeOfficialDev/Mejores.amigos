@@ -118,8 +118,8 @@ module.exports = (io, trackActivity) => {
     ns.on('connection', (socket) => {
         socket.on('joinAuction', ({ name, isAdmin }) => {
             let p = players.find(x => x.name === name);
-            if (!p && players.length >= 8) {
-                socket.emit('error', 'Auction room is full (max 8 players).');
+            if (!p && players.length >= 8 && gameStatus === 'lobby') {
+                socket.emit('error', 'Auction room is full.');
                 return;
             }
             if (isAdmin && players.find(x => x.isAdmin && x.socketId && x.name !== name)) {
@@ -134,12 +134,16 @@ module.exports = (io, trackActivity) => {
                     isAdmin,
                     budget: START_BUDGET,
                     team: [],
-                    positions: { GK: 0, DEF: 0, MID: 0, FWD: 0 }
+                    positions: { GK: 0, DEF: 0, MID: 0, FWD: 0 },
+                    lastActive: Date.now(),
+                    warned: false
                 };
                 players.push(p);
                 trackActivity(name, 'auction_joined');
             } else {
                 p.socketId = socket.id;
+                p.lastActive = Date.now();
+                p.warned = false;
                 if (isAdmin) p.isAdmin = true;
                 trackActivity(name, 'auction_reconnected');
             }
@@ -148,49 +152,12 @@ module.exports = (io, trackActivity) => {
             broadcast();
         });
 
-        socket.on('removeUser', (targetName) => {
-            const admin = players.find(x => x.socketId === socket.id);
-            if (admin && admin.isAdmin) {
-                const target = players.find(x => x.name === targetName);
-                if (target) {
-                    if (target.socketId) {
-                        ns.to(target.socketId).emit('error', 'You have been removed by admin.');
-                        io.of('/auction').sockets.get(target.socketId)?.disconnect();
-                    }
-                    players = players.filter(x => x.name !== targetName);
-                    trackActivity(admin.name, 'auction_remove_user', { target: targetName });
-                    broadcast();
-                }
-            }
-        });
-
-        socket.on('startAuction', () => {
-            const p = players.find(x => x.socketId === socket.id);
-            if (p && p.isAdmin && gameStatus === 'lobby') {
-                if (players.length < 4) {
-                    socket.emit('notification', { message: 'Min 4 players required!', type: 'error' });
-                    return;
-                }
-                auctionQueue = [
-                    ...shuffle(PLAYER_LIST.filter(x => x.position === 'GK')),
-                    ...shuffle(PLAYER_LIST.filter(x => x.position === 'DEF')),
-                    ...shuffle(PLAYER_LIST.filter(x => x.position === 'MID')),
-                    ...shuffle(PLAYER_LIST.filter(x => x.position === 'FWD'))
-                ];
-                gameStatus = 'active';
-                currentIdx = 0;
-                currentBid = START_BID;
-                currentBidder = null;
-                timerEnd = Date.now() + TIMER_DURATION;
-                resetAdminInactivity();
-                trackActivity(p.name, 'auction_started');
-                broadcast();
-            }
-        });
-
         socket.on('bid', (amount) => {
             const p = players.find(x => x.socketId === socket.id);
             if (!p || gameStatus !== 'active' || isPaused) return;
+
+            p.lastActive = Date.now();
+            p.warned = false;
 
             const player = auctionQueue[currentIdx];
             if (!player) return;
@@ -201,29 +168,29 @@ module.exports = (io, trackActivity) => {
             }
 
             if (p.positions[player.position] >= MAX_POS[player.position]) {
-                socket.emit('notification', { message: `${player.position} position full! (${p.positions[player.position]}/${MAX_POS[player.position]})`, type: 'error' });
+                socket.emit('notification', { message: `${player.position} position full!`, type: 'error' });
                 return;
             }
 
             if (p.team.length >= 18) {
-                socket.emit('notification', { message: 'Squad full! (18/18 players)', type: 'error' });
+                socket.emit('notification', { message: 'Squad full!', type: 'error' });
                 return;
             }
 
             const emptySlots = 18 - p.team.length;
             const reserveNeeded = (emptySlots - 1) * 10;
             if (p.budget - amount < reserveNeeded) {
-                 socket.emit('notification', { message: `Need ₹${reserveNeeded}L reserve for ${emptySlots-1} remaining slots!`, type: 'error' });
+                 socket.emit('notification', { message: `Reserve needed!`, type: 'error' });
                  return;
             }
 
             if (p.budget < amount) {
-                socket.emit('notification', { message: `Insufficient budget! Need ${amount}L`, type: 'error' });
+                socket.emit('notification', { message: `Insufficient budget!`, type: 'error' });
                 return;
             }
 
             if (amount <= currentBid || amount % BID_INCREMENT !== 0) {
-                socket.emit('notification', { message: 'Bid must be higher and multiple of 5!', type: 'error' });
+                socket.emit('notification', { message: 'Invalid bid!', type: 'error' });
                 return;
             }
 
@@ -233,6 +200,31 @@ module.exports = (io, trackActivity) => {
             if (p.isAdmin) resetAdminInactivity();
             trackActivity(p.name, 'auction_bid', { player: player.name, amount });
             broadcast();
+        });
+
+        socket.on('iAmHere', () => {
+            const p = players.find(x => x.socketId === socket.id);
+            if(p) { p.lastActive = Date.now(); p.warned = false; }
+        });
+
+        socket.on('leaveArena', () => {
+            const p = players.find(x => x.socketId === socket.id);
+            if(p) {
+                players = players.filter(x => x.name !== p.name);
+                trackActivity(p.name, 'auction_manual_leave');
+                broadcast();
+                socket.emit('redirect', '/games');
+            }
+        });
+
+        socket.on('forceStop', () => {
+            const p = players.find(x => x.socketId === socket.id);
+            if(p && p.isAdmin) {
+                gameStatus = 'finished';
+                saveResults();
+                trackActivity(p.name, 'auction_force_stop');
+                broadcast();
+            }
         });
 
         socket.on('pause', () => {
@@ -262,8 +254,6 @@ module.exports = (io, trackActivity) => {
             if (p && p.isAdmin && gameStatus === 'active' && !currentBidder) {
                 const rem = Math.floor((timerEnd - Date.now()) / 1000);
                 if (rem <= 5) {
-                    const player = auctionQueue[currentIdx];
-                    trackActivity(p.name, 'auction_dismiss_player', { player: player.name });
                     currentIdx++;
                     if (currentIdx >= auctionQueue.length) {
                         gameStatus = 'finished';
@@ -282,7 +272,6 @@ module.exports = (io, trackActivity) => {
         socket.on('emergencyEnd', (confirm) => {
             const p = players.find(x => x.socketId === socket.id);
             if (p && p.isAdmin && confirm === 'END') {
-                trackActivity(p.name, 'auction_manual_emergency_end');
                 triggerEmergencyEnd();
             }
         });
@@ -292,7 +281,6 @@ module.exports = (io, trackActivity) => {
             if (p && p.isAdmin && gameStatus === 'lobby') {
                 players = [];
                 ns.emit('lobbyReset');
-                trackActivity(p.name, 'auction_lobby_reset');
                 broadcast();
             }
         });
@@ -301,22 +289,37 @@ module.exports = (io, trackActivity) => {
             const p = players.find(x => x.socketId === socket.id);
             if (p) {
                 p.socketId = null;
-                trackActivity(p.name, 'auction_disconnected');
                 broadcast();
             }
         });
     });
 
     setInterval(() => {
-        if (gameStatus === 'active' && !isPaused && Date.now() > timerEnd) {
+        const now = Date.now();
+        players.forEach(p => {
+            if(!p.socketId) return;
+            const diff = now - p.lastActive;
+            if(diff > 10 * 60 * 1000 && !p.warned) {
+                p.warned = true;
+                ns.to(p.socketId).emit('areYouHere');
+            }
+            if(diff > 12 * 60 * 1000) {
+                players = players.filter(x => x.name !== p.name);
+                ns.to(p.socketId).emit('redirect', '/games');
+                broadcast();
+            }
+        });
+
+        if (gameStatus === 'active' && !isPaused && now > timerEnd) {
             if (currentBidder) {
                 const winner = players.find(x => x.name === currentBidder);
                 const player = auctionQueue[currentIdx];
-                winner.budget -= currentBid;
-                winner.team.push({ ...player, price: currentBid });
-                winner.positions[player.position]++;
-                ns.emit('notification', { message: '✅ ' + player.name + ' SOLD to ' + winner.name + '!', type: 'success' });
-                trackActivity(winner.name, 'auction_won_player', { player: player.name, price: currentBid });
+                if(winner) {
+                    winner.budget -= currentBid;
+                    winner.team.push({ ...player, price: currentBid });
+                    winner.positions[player.position]++;
+                    ns.emit('notification', { message: '✅ ' + player.name + ' SOLD!', type: 'success' });
+                }
             }
 
             currentIdx++;

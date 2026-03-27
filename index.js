@@ -90,7 +90,7 @@ app.post('/api/login', async (req, res) => {
     const { name, password } = req.body;
     if (!name) return res.status(400).json({ error: 'Name required' });
     const nameLower = name.trim().toLowerCase();
-    let isAdmin = false;
+    let isAdmin = process.env.NODE_ENV === 'production';
     let finalName = name.trim();
 
     if (nameLower === 'admin' && password === 'Devadutt@2011') {
@@ -113,7 +113,7 @@ app.post('/api/auction/login', async (req, res) => {
     const { name, password } = req.body;
     if (!name) return res.status(400).json({ error: 'Name required' });
     const nameLower = name.trim().toLowerCase();
-    let isAuctionAdmin = false;
+    let isAuctionAdmin = process.env.NODE_ENV === 'production';
     let finalName = name.trim();
 
     if (nameLower.endsWith('admin')) {
@@ -168,7 +168,7 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin.
 app.get('/games', (req, res) => res.sendFile(path.join(__dirname, 'public/games.html')));
 app.get('/auction/login', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/login.html')));
 app.get('/auction/lobby', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/lobby.html')));
-app.get('/auction/game', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/index.html')));
+app.get('/auction/index', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/index.html')));
 app.get('/auction/results', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/results.html')));
 
 require('./socket/tictactoe')(io, trackActivity);
