@@ -168,7 +168,7 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public/admin.
 app.get('/games', (req, res) => res.sendFile(path.join(__dirname, 'public/games.html')));
 app.get('/auction/login', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/login.html')));
 app.get('/auction/lobby', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/lobby.html')));
-app.get('/auction/game', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/index.html')));
+app.get('/auction/index', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/index.html')));
 app.get('/auction/results', (req, res) => res.sendFile(path.join(__dirname, 'public/auction/results.html')));
 
 require('./socket/tictactoe')(io, trackActivity);
